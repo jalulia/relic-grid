@@ -37,6 +37,12 @@
 
     --radius: 0px;
 
+    --sect-red: 0 75% 55%;
+    --sect-cyan: 185 80% 55%;
+    --sect-magenta: 300 65% 60%;
+    --sect-lime: 100 70% 50%;
+    --sect-orange: 30 90% 55%;
+
     --cell-bg: 240 10% 6%;
     --cell-titlebar: 240 8% 11%;
     --cell-border: 225 100% 58%;
