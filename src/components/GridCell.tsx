@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { BSPNode, Lot } from '../game/types';
+import { getRelicImage } from '../game/relicImages';
 
 interface GridCellProps {
   node: BSPNode;
@@ -24,12 +25,16 @@ function getStatusColor(lot: Lot): string {
 }
 
 const GridCell = memo(({ node, lot, saintProgress, isSelected, onSelect }: GridCellProps) => {
-  const isSmall = node.w < 200 || node.h < 110;
+  const isSmall = node.w < 200 || node.h < 120;
   const isTiny = node.w < 150 || node.h < 90;
-  const isLarge = node.w > 300 && node.h > 160;
+  const showImage = node.w > 160 && node.h > 130;
 
-  const timeStr = `${String(Math.floor(lot.timeRemaining / 60)).padStart(2, '0')}:${String(Math.max(0, lot.timeRemaining) % 60).padStart(2, '0')}`;
+  const timeStr = `${String(Math.floor(Math.max(0, lot.timeRemaining) / 60)).padStart(2, '0')}:${String(Math.max(0, lot.timeRemaining) % 60).padStart(2, '0')}`;
   const flashClass = lot.flash === 'outbid' ? 'cell-flash-outbid' : lot.flash === 'win' ? 'cell-flash-win' : '';
+  const relicImage = getRelicImage(lot.relic.id);
+
+  // Calculate image size relative to cell
+  const imgSize = Math.min(node.w * 0.4, node.h * 0.45, 120);
 
   return (
     <div
@@ -52,40 +57,52 @@ const GridCell = memo(({ node, lot, saintProgress, isSelected, onSelect }: GridC
         <div className={`w-1.5 h-1.5 rounded-full ${getStatusDot(lot)}`} />
       </div>
 
-      {/* Content */}
-      <div className="p-1.5 flex flex-col gap-0.5" style={{ fontSize: isTiny ? 9 : isSmall ? 10 : 11 }}>
-        {!isTiny && (
-          <div className="text-foreground font-mono truncate" style={{ fontSize: isSmall ? 10 : 12 }}>
-            {lot.relic.name}
-          </div>
-        )}
-
-        <div className="text-muted-foreground truncate">
-          {lot.relic.saintName} [{saintProgress.collected}/{saintProgress.total}]
-        </div>
-
-        {isLarge && (
-          <>
-            <div className="text-muted-foreground text-[9px]">
-              Class {lot.relic.relicClass === 1 ? 'I' : lot.relic.relicClass === 2 ? 'II' : 'III'}
+      {/* Content with image */}
+      <div className="relative flex-1 p-1.5" style={{ height: node.h - 16 }}>
+        {/* Text info */}
+        <div className="flex flex-col gap-0.5 relative z-10" style={{ fontSize: isTiny ? 9 : isSmall ? 10 : 11 }}>
+          {!isTiny && (
+            <div className="text-foreground font-mono truncate" style={{ fontSize: isSmall ? 10 : 13, fontWeight: 700 }}>
+              {lot.relic.name}
             </div>
-            <div className="text-muted-foreground text-[9px] truncate">{lot.relic.provenance}</div>
-          </>
-        )}
-
-        <div className="flex items-center gap-2 mt-0.5">
-          <span className={getStatusColor(lot)}>◈ {lot.currentBid}</span>
-          {lot.yourBid !== null && lot.yourBid < lot.currentBid && (
-            <span className="text-destructive text-[9px]">yours: ◈ {lot.yourBid}</span>
           )}
+
+          <div className="text-muted-foreground truncate">
+            {lot.relic.saintName} [{saintProgress.collected}/{saintProgress.total}]
+          </div>
+
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className={getStatusColor(lot)}>◈ {lot.currentBid}</span>
+            {lot.yourBid !== null && lot.yourBid < lot.currentBid && (
+              <span className="text-destructive text-[9px]">yours: ◈ {lot.yourBid}</span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className={`font-mono ${lot.timeRemaining < 30 ? 'text-destructive' : 'text-muted-foreground'}`}>
+              {timeStr}
+            </span>
+            {!isSmall && <span className="text-muted-foreground text-[9px]">{lot.bidCount} bids</span>}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className={`font-mono ${lot.timeRemaining < 30 ? 'text-destructive' : 'text-muted-foreground'}`}>
-            {timeStr}
-          </span>
-          {!isSmall && <span className="text-muted-foreground text-[9px]">{lot.bidCount} bids</span>}
-        </div>
+        {/* Relic image — positioned bottom-right */}
+        {showImage && (
+          <img
+            src={relicImage}
+            alt=""
+            className="absolute pointer-events-none"
+            style={{
+              bottom: 4,
+              right: 4,
+              width: imgSize,
+              height: imgSize,
+              objectFit: 'contain',
+              opacity: 0.85,
+              filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.6))',
+            }}
+          />
+        )}
       </div>
     </div>
   );
