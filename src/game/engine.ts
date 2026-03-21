@@ -131,7 +131,7 @@ export function tick(state: GameState, now: number): GameState {
     // Update weight based on time/activity — gentler changes
     const timeRatio = l.timeRemaining / l.totalTime;
     const activityBoost = Math.min(l.bidCount * 0.1, 0.8);
-    const hasYourBid = l.yourBid !== null ? 0.5 : 0;
+    const hasYourBid = l.yourBid !== null ? 1.0 : 0;
     l.weight = 0.8 + (1 - timeRatio) * 0.8 + activityBoost + hasYourBid;
     if (l.timeRemaining < 15) l.weight += 0.5;
 

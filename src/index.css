@@ -100,3 +100,12 @@
   80% { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(1.1); }
 }
+
+@keyframes outbid-pulse {
+  0%, 100% { border-left-color: hsl(0 72% 51%); }
+  50% { border-left-color: transparent; }
+}
+
+.outbid-pulse {
+  animation: outbid-pulse 1.2s ease-in-out infinite;
+}

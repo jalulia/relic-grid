@@ -16,7 +16,7 @@ const TerminalFeed = memo(({ messages, isSlowed }: TerminalFeedProps) => {
   }, [messages.length]);
 
   return (
-    <div className="flex flex-col border-l border-cell-border bg-cell shrink-0" style={{ width: 320 }}>
+    <div className="flex flex-col bg-cell flex-1 overflow-hidden">
       {/* Terminal header */}
       <div className="flex items-center justify-between bg-cell-titlebar px-2 border-b border-cell-border" style={{ height: 16 }}>
         <span className="text-[9px] text-muted-foreground font-mono">TRIBUNAL_FEED.LOG</span>

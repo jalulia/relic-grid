@@ -6,14 +6,15 @@ import { HerasyReport, generateHeresyReport, generateSystemMessage } from '../ga
 import GridCell from '../components/GridCell';
 import SaintTracker from '../components/SaintTracker';
 import SaintCompleteOverlay from '../components/SaintCompleteOverlay';
-import BidBar from '../components/BidBar';
+import LotTicker from '../components/LotTicker';
+import BidPanel from '../components/BidPanel';
+import Collection from '../components/Collection';
 import TerminalFeed from '../components/TerminalFeed';
 import TutorialOverlay from '../components/TutorialOverlay';
 
-
-const HERESY_SLOWDOWN_MS = 4000; // market slows for 4s after heresy
-const FEED_INTERVAL = 2500; // new message every 2.5s
-const HERESY_CHANCE = 0.35; // 35% chance a message is heresy
+const HERESY_SLOWDOWN_MS = 4000;
+const FEED_INTERVAL = 2500;
+const HERESY_CHANCE = 0.35;
 
 export default function Index() {
   const [game, setGame] = useState<GameState>(() => initGame());
@@ -27,50 +28,41 @@ export default function Index() {
 
   const isSlowed = Date.now() < slowedUntil;
 
-  // Handle resize
   useEffect(() => {
     const handler = () => setDims({ w: window.innerWidth, h: window.innerHeight });
     window.addEventListener('resize', handler);
     return () => window.removeEventListener('resize', handler);
   }, []);
 
-  // Game tick — skips every other tick when slowed
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
       const currentlySlowed = now < slowedUntil;
-
       if (currentlySlowed) {
         tickSkip.current = !tickSkip.current;
-        if (tickSkip.current) return; // skip this tick
+        if (tickSkip.current) return;
       } else {
         tickSkip.current = false;
       }
-
       setGame(prev => tick(prev, now));
     }, TICK_INTERVAL);
     return () => clearInterval(interval);
   }, [slowedUntil]);
 
-  // Spawn new lots
   useEffect(() => {
-    const interval = setInterval(() => {
-      setGame(prev => spawnLot(prev));
-    }, LOT_SPAWN_INTERVAL);
+    const interval = setInterval(() => setGame(prev => spawnLot(prev)), LOT_SPAWN_INTERVAL);
     return () => clearInterval(interval);
   }, []);
 
-  // AI bids — also slowed
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
-      if (now < slowedUntil) return; // AI pauses during heresy
+      if (now < slowedUntil) return;
       setGame(prev => aiBids(prev, now));
     }, AI_BID_INTERVAL);
     return () => clearInterval(interval);
   }, [slowedUntil]);
 
-  // Terminal feed
   useEffect(() => {
     const interval = setInterval(() => {
       msgCounter.current += 1;
@@ -78,20 +70,15 @@ export default function Index() {
       const msg = isHeresy
         ? generateHeresyReport(msgCounter.current)
         : generateSystemMessage(msgCounter.current);
-
       setMessages(prev => {
         const next = [...prev, msg];
         return next.length > 80 ? next.slice(-60) : next;
       });
-
-      if (isHeresy) {
-        setSlowedUntil(Date.now() + HERESY_SLOWDOWN_MS);
-      }
+      if (isHeresy) setSlowedUntil(Date.now() + HERESY_SLOWDOWN_MS);
     }, FEED_INTERVAL);
     return () => clearInterval(interval);
   }, []);
 
-  // Clear selection if lot is gone
   useEffect(() => {
     if (selectedLotId && !game.lots.find(l => l.id === selectedLotId && l.status === 'active')) {
       setSelectedLotId(null);
@@ -116,10 +103,10 @@ export default function Index() {
 
   const trackerHeight = 28;
   const titleBarHeight = 22;
-  const bidBarHeight = 36;
-  const terminalWidth = 320;
-  const gridH = dims.h - trackerHeight - titleBarHeight - bidBarHeight;
-  const gridW = dims.w - terminalWidth;
+  const tickerWidth = 220;
+  const sidebarWidth = 320;
+  const gridH = dims.h - trackerHeight - titleBarHeight;
+  const gridW = dims.w - tickerWidth - sidebarWidth;
 
   const activeLots = game.lots.filter(l => l.status === 'active' || l.timeRemaining > -2);
   const nodes = buildBSP(activeLots, 0, 0, gridW, gridH);
@@ -159,11 +146,13 @@ export default function Index() {
         <SaintTracker saints={game.saints} currency={game.currency} />
       </div>
 
-      {/* Main area: grid + terminal */}
+      {/* Main 3-column area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Grid */}
+        {/* Left: Lot Ticker */}
+        <LotTicker lots={game.lots} selectedLotId={selectedLotId} onSelect={handleSelect} />
+
+        {/* Center: Market Grid */}
         <div className="relative flex-1 overflow-hidden bg-background">
-          {/* Dark overlay */}
           <div className="absolute inset-0 z-0" style={{ backgroundColor: 'hsl(240 12% 4%)' }} />
           {nodes.map(node => {
             if (!node.lotId) return null;
@@ -173,7 +162,6 @@ export default function Index() {
             const progress = saint
               ? { collected: saint.collectedRelics.length, total: saint.totalRelics }
               : { collected: 0, total: 0 };
-
             return (
               <GridCell
                 key={lot.id}
@@ -187,19 +175,18 @@ export default function Index() {
           })}
         </div>
 
-        {/* Terminal feed */}
-        <TerminalFeed messages={messages} isSlowed={isSlowed} />
-      </div>
-
-      {/* Bid bar */}
-      <div className="shrink-0">
-        <BidBar
-          lot={selectedLot}
-          saintProgress={selectedSaintProgress}
-          currency={game.currency}
-          onBid={handleBid}
-          onClose={handleCloseBar}
-        />
+        {/* Right: BidPanel + Terminal + Collection */}
+        <div className="flex flex-col border-l border-cell-border bg-cell shrink-0" style={{ width: sidebarWidth }}>
+          <BidPanel
+            lot={selectedLot}
+            saintProgress={selectedSaintProgress}
+            currency={game.currency}
+            onBid={handleBid}
+            onClose={handleCloseBar}
+          />
+          <TerminalFeed messages={messages} isSlowed={isSlowed} />
+          <Collection saints={game.saints} />
+        </div>
       </div>
 
       <SaintCompleteOverlay saintName={game.completedSaint} onDone={handleSaintDone} />
