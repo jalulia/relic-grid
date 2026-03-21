@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { playWololo } from '../game/audio';
 
 interface Props {
   saintName: string | null;
@@ -11,6 +12,7 @@ export default function SaintCompleteOverlay({ saintName, onDone }: Props) {
   useEffect(() => {
     if (saintName) {
       setVisible(true);
+      playWololo();
       const timer = setTimeout(() => {
         setVisible(false);
         onDone();

@@ -9,6 +9,7 @@ import SaintCompleteOverlay from '../components/SaintCompleteOverlay';
 import BidBar from '../components/BidBar';
 import TerminalFeed from '../components/TerminalFeed';
 import TutorialOverlay from '../components/TutorialOverlay';
+import { playWololo } from '../game/audio';
 
 const HERESY_SLOWDOWN_MS = 4000; // market slows for 4s after heresy
 const FEED_INTERVAL = 2500; // new message every 2.5s
@@ -85,6 +86,7 @@ export default function Index() {
 
       if (isHeresy) {
         setSlowedUntil(Date.now() + HERESY_SLOWDOWN_MS);
+        playWololo();
       }
     }, FEED_INTERVAL);
     return () => clearInterval(interval);
@@ -161,7 +163,9 @@ export default function Index() {
       {/* Main area: grid + terminal */}
       <div className="flex flex-1 overflow-hidden">
         {/* Grid */}
-        <div className="relative flex-1 overflow-hidden">
+        <div className="relative flex-1 overflow-hidden" style={{ backgroundImage: 'url(/images/relics/dust-bg.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+          {/* Dust overlay darkened */}
+          <div className="absolute inset-0 z-0" style={{ backgroundColor: 'hsl(240 12% 4% / 0.88)' }} />
           {nodes.map(node => {
             if (!node.lotId) return null;
             const lot = lotMap.get(node.lotId);
