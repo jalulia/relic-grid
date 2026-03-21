@@ -62,7 +62,7 @@ const GridCell = memo(({ node, lot, saintProgress, isSelected, onSelect }: GridC
   return (
     <div
       className={`absolute overflow-hidden border bg-cell cursor-pointer select-none ${flashClass} ${
-        isSelected ? 'border-accent z-10' : 'border-cell-border'
+        isSelected ? 'border-accent z-10' : hasBid ? (isWinning ? 'border-l-success border-cell-border' : 'border-l-destructive border-cell-border outbid-pulse') : 'border-cell-border'
       }`}
       style={{
         left: node.x,
@@ -71,6 +71,7 @@ const GridCell = memo(({ node, lot, saintProgress, isSelected, onSelect }: GridC
         height: node.h,
         transition: 'left 600ms ease, top 600ms ease, width 600ms ease, height 600ms ease',
         borderWidth: isSelected ? 2 : 1,
+        borderLeftWidth: hasBid ? 3 : (isSelected ? 2 : 1),
       }}
       onClick={handleClick}
     >
