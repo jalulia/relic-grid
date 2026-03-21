@@ -8,6 +8,7 @@ import SaintTracker from '../components/SaintTracker';
 import SaintCompleteOverlay from '../components/SaintCompleteOverlay';
 import BidBar from '../components/BidBar';
 import TerminalFeed from '../components/TerminalFeed';
+import TutorialOverlay from '../components/TutorialOverlay';
 
 const HERESY_SLOWDOWN_MS = 4000; // market slows for 4s after heresy
 const FEED_INTERVAL = 2500; // new message every 2.5s
