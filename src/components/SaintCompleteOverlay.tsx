@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { playWololo } from '../game/audio';
 
 interface Props {
   saintName: string | null;
