@@ -7,189 +7,195 @@ interface TutorialOverlayProps {
 const PAGES = [
   {
     title: 'HOLY_OPS.EXE',
-    subtitle: 'RELIC EXCHANGE TERMINAL',
+    subtitle: 'RELIC EXCHANGE TERMINAL v0.1',
     content: (
       <div className="flex flex-col items-center gap-6">
-        <div className="text-[80px] leading-none">✝</div>
-        <p className="text-foreground text-center" style={{ fontSize: 13, lineHeight: '22px', maxWidth: 400 }}>
-          You are a relic broker on the last open exchange. Sacred fragments of saints
-          appear as auction lots on a living grid. Your mission: <span className="text-accent">assemble complete saints</span> by
-          winning every relic that belongs to them.
+        <div className="text-[72px] leading-none" style={{ filter: 'drop-shadow(0 0 20px hsl(45 100% 50% / 0.4))' }}>✝</div>
+        <p className="text-foreground text-center" style={{ fontSize: 14, lineHeight: '24px', maxWidth: 420 }}>
+          Welcome to the last open relic exchange. You are a broker of sacred bones,
+          teeth, and splinters — bidding against machines and zealots for the scattered
+          remains of saints.
         </p>
-        <div className="font-mono text-muted-foreground text-center" style={{ fontSize: 10, marginTop: 8 }}>
-          You have a fixed budget. No refills. No mercy.<br/>
-          Spend wisely. Watch everything.
+        <div className="border border-accent/30 bg-accent/5 px-4 py-3 text-center" style={{ maxWidth: 380 }}>
+          <p className="text-accent font-mono" style={{ fontSize: 13 }}>
+            YOUR GOAL
+          </p>
+          <p className="text-foreground mt-1" style={{ fontSize: 12, lineHeight: '20px' }}>
+            Collect <span className="text-accent font-bold">every relic</span> belonging to a saint
+            to complete them. Complete as many saints as you can before your money runs out.
+          </p>
+        </div>
+        <div className="text-muted-foreground text-center font-mono" style={{ fontSize: 10 }}>
+          Budget: ◈ 5,000 · No refills · No mercy
         </div>
       </div>
     ),
   },
   {
     title: 'THE GRID',
-    subtitle: 'YOUR BATTLEFIELD',
+    subtitle: 'READING THE BATTLEFIELD',
     content: (
       <div className="flex flex-col gap-5">
-        <div className="flex gap-3 items-start">
-          <div className="border border-cell-border bg-cell p-2 shrink-0" style={{ width: 180, fontSize: 10 }}>
-            <div className="bg-cell-titlebar px-1 mb-1 flex items-center justify-between" style={{ height: 14 }}>
-              <span className="text-muted-foreground text-[8px]">LOT-0447</span>
+        <p className="text-foreground text-center" style={{ fontSize: 12, lineHeight: '20px' }}>
+          The grid is a live auction floor. Each rectangle is a <span className="text-primary">lot</span> — 
+          a relic for sale. Cells resize dynamically: hot lots grow, quiet ones shrink.
+        </p>
+
+        {/* Annotated mock cell */}
+        <div className="mx-auto relative" style={{ width: 280 }}>
+          <div className="border border-cell-border bg-cell" style={{ width: 240 }}>
+            <div className="bg-cell-titlebar px-1.5 flex items-center justify-between" style={{ height: 16 }}>
+              <span className="text-muted-foreground text-[9px]">LOT-0447</span>
               <div className="w-1.5 h-1.5 rounded-full bg-success" />
             </div>
-            <div className="text-foreground font-mono" style={{ fontSize: 11 }}>Third Metacarpal</div>
-            <div className="text-muted-foreground">AMBROSE [3/12]</div>
-            <div className="text-success mt-1">◈ 340</div>
-            <div className="text-muted-foreground">01:42</div>
+            <div className="p-2" style={{ fontSize: 10 }}>
+              <div className="text-foreground font-mono" style={{ fontSize: 12, fontWeight: 700 }}>Third Metacarpal</div>
+              <div className="text-muted-foreground">AMBROSE [3/12]</div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-success">◈ 340</span>
+              </div>
+              <div className="text-muted-foreground font-mono">01:42</div>
+            </div>
           </div>
-          <div className="flex flex-col gap-2" style={{ fontSize: 12, lineHeight: '20px' }}>
-            <p className="text-foreground">
-              Each cell is a <span className="text-primary">live auction lot</span>. The grid constantly reshuffles — 
-              important lots grow larger, quiet ones compress.
-            </p>
-            <p className="text-muted-foreground" style={{ fontSize: 11 }}>
-              Cells show: relic name, saint association, current bid, and time remaining.
-            </p>
+
+          {/* Annotations */}
+          <div className="absolute font-mono text-[8px]" style={{ top: 2, left: 252 }}>
+            <div className="text-accent">← LOT ID</div>
+          </div>
+          <div className="absolute font-mono text-[8px]" style={{ top: 20, left: 252 }}>
+            <div className="text-accent">← RELIC NAME</div>
+          </div>
+          <div className="absolute font-mono text-[8px]" style={{ top: 36, left: 252 }}>
+            <div className="text-accent">← SAINT [owned/total]</div>
+          </div>
+          <div className="absolute font-mono text-[8px]" style={{ top: 52, left: 252 }}>
+            <div className="text-accent">← CURRENT BID</div>
+          </div>
+          <div className="absolute font-mono text-[8px]" style={{ top: 68, left: 252 }}>
+            <div className="text-accent">← TIME LEFT</div>
           </div>
         </div>
 
-        <div className="flex gap-4 justify-center" style={{ fontSize: 10 }}>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-success" />
-            <span className="text-foreground">Winning</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-destructive" />
-            <span className="text-foreground">Outbid</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-accent" />
-            <span className="text-foreground">Closing soon</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground" />
-            <span className="text-foreground">No bid placed</span>
+        {/* Status legend */}
+        <div className="border border-cell-border bg-cell-titlebar p-3 mx-auto" style={{ fontSize: 11 }}>
+          <div className="text-muted-foreground font-mono text-[9px] mb-2" style={{ letterSpacing: 2 }}>STATUS INDICATORS</div>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-success" style={{ boxShadow: '0 0 6px hsl(142 72% 45%)' }} />
+              <span className="text-foreground">You're <span className="text-success font-bold">winning</span> this lot</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-destructive" style={{ boxShadow: '0 0 6px hsl(0 72% 51%)' }} />
+              <span className="text-foreground">You've been <span className="text-destructive font-bold">outbid</span> — bid again or lose it</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-accent" style={{ boxShadow: '0 0 6px hsl(45 100% 50%)' }} />
+              <span className="text-foreground"><span className="text-accent font-bold">Closing soon</span> — under 15 seconds left</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-muted-foreground" />
+              <span className="text-foreground">You haven't bid on this one yet</span>
+            </div>
           </div>
         </div>
       </div>
     ),
   },
   {
-    title: 'BIDDING',
-    subtitle: 'HOW TO ACQUIRE RELICS',
+    title: 'HOW TO BID',
+    subtitle: 'STEP BY STEP',
     content: (
       <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-3" style={{ fontSize: 12, lineHeight: '22px' }}>
+        {/* Step-by-step with visuals */}
+        <div className="flex flex-col gap-4">
           <div className="flex gap-3 items-start">
-            <span className="text-accent font-mono shrink-0" style={{ fontSize: 18, lineHeight: '22px' }}>1</span>
-            <p className="text-foreground">
-              <span className="text-primary">Click any cell</span> on the grid to select it.
-              The cell highlights with a gold border.
-            </p>
+            <div className="bg-primary text-primary-foreground font-mono flex items-center justify-center shrink-0" style={{ width: 28, height: 28, fontSize: 14 }}>1</div>
+            <div>
+              <p className="text-foreground" style={{ fontSize: 12, lineHeight: '20px' }}>
+                <span className="text-primary font-bold">Click any cell</span> on the grid to select it.
+                A gold border appears around your chosen lot.
+              </p>
+            </div>
           </div>
+
           <div className="flex gap-3 items-start">
-            <span className="text-accent font-mono shrink-0" style={{ fontSize: 18, lineHeight: '22px' }}>2</span>
-            <p className="text-foreground">
-              The <span className="text-primary">bid bar</span> appears at the bottom of the screen
-              showing lot details and a bid input pre-filled with the minimum.
-            </p>
+            <div className="bg-primary text-primary-foreground font-mono flex items-center justify-center shrink-0" style={{ width: 28, height: 28, fontSize: 14 }}>2</div>
+            <div>
+              <p className="text-foreground" style={{ fontSize: 12, lineHeight: '20px' }}>
+                The <span className="text-primary font-bold">bid bar</span> appears at the bottom with lot info and a
+                pre-filled minimum bid amount.
+              </p>
+            </div>
           </div>
+
           <div className="flex gap-3 items-start">
-            <span className="text-accent font-mono shrink-0" style={{ fontSize: 18, lineHeight: '22px' }}>3</span>
-            <p className="text-foreground">
-              Enter your amount and hit <span className="text-primary">BID</span> or press Enter. 
-              Your bid must exceed the current price.
-            </p>
+            <div className="bg-primary text-primary-foreground font-mono flex items-center justify-center shrink-0" style={{ width: 28, height: 28, fontSize: 14 }}>3</div>
+            <div>
+              <p className="text-foreground" style={{ fontSize: 12, lineHeight: '20px' }}>
+                Type your amount (must beat current bid) and press <span className="text-primary font-bold">BID</span> or hit Enter.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Mock bid bar */}
-        <div className="border border-accent bg-cell-titlebar flex items-center gap-2 px-2 mx-auto" style={{ height: 28, fontSize: 10, width: '90%' }}>
-          <span className="text-accent">LOT-0447</span>
-          <span className="text-foreground">Third Metacarpal</span>
-          <span className="text-muted-foreground">│</span>
-          <span className="text-foreground">◈ 340</span>
-          <span className="text-success text-[9px]">WINNING</span>
-          <span className="text-muted-foreground">│</span>
-          <span className="text-muted-foreground">◈</span>
-          <div className="bg-input border border-cell-border text-foreground px-1" style={{ width: 50, height: 18, fontSize: 10, lineHeight: '18px' }}>
-            350
-          </div>
-          <div className="bg-primary text-primary-foreground px-2" style={{ height: 18, fontSize: 9, lineHeight: '18px', letterSpacing: 1 }}>
-            BID
+        {/* Visual mock of bid bar */}
+        <div className="mx-auto w-full" style={{ maxWidth: 460 }}>
+          <div className="text-muted-foreground font-mono text-[8px] mb-1" style={{ letterSpacing: 2 }}>↓ BID BAR (BOTTOM OF SCREEN)</div>
+          <div className="border border-accent bg-cell-titlebar flex items-center gap-2 px-3" style={{ height: 32, fontSize: 10 }}>
+            <span className="text-accent font-bold">LOT-0447</span>
+            <span className="text-foreground">Third Metacarpal</span>
+            <span className="text-muted-foreground">│</span>
+            <span className="text-foreground">current: ◈ 340</span>
+            <span className="text-success text-[9px] font-bold">WINNING</span>
+            <span className="text-muted-foreground">│</span>
+            <span className="text-muted-foreground">◈</span>
+            <div className="bg-input border border-cell-border text-foreground px-1.5 font-mono" style={{ width: 55, height: 20, fontSize: 11, lineHeight: '20px' }}>
+              350
+            </div>
+            <div className="bg-primary text-primary-foreground px-3 font-mono" style={{ height: 20, fontSize: 10, lineHeight: '20px', letterSpacing: 1 }}>
+              BID
+            </div>
           </div>
         </div>
 
-        <p className="text-muted-foreground text-center" style={{ fontSize: 10 }}>
-          Press ESC to deselect a lot. You can bid on as many lots as you can afford.
-        </p>
+        <div className="border border-muted/20 bg-muted/5 px-3 py-2 text-center" style={{ fontSize: 11 }}>
+          <span className="text-accent">💡</span> You're only charged when you <span className="text-success font-bold">win</span>.
+          Outbid? Your ◈ comes back. Bid freely.
+        </div>
       </div>
     ),
   },
   {
-    title: 'THE COMPETITION',
-    subtitle: 'YOU ARE NOT ALONE',
+    title: 'RIVALS & HERESY',
+    subtitle: 'THE CHAOS',
     content: (
       <div className="flex flex-col gap-5" style={{ fontSize: 12, lineHeight: '22px' }}>
-        <p className="text-foreground text-center">
-          Automated bidders compete for every relic. They bid more aggressively
-          as lots near expiry. When you're outbid, the cell <span className="text-destructive">flashes red</span>.
-        </p>
-
-        <div className="border border-cell-border bg-cell p-3 mx-auto cell-flash-outbid" style={{ width: 200, fontSize: 10 }}>
-          <div className="text-foreground font-mono" style={{ fontSize: 11 }}>Left Femur Fragment</div>
-          <div className="text-muted-foreground">AMBROSE [3/12]</div>
-          <div className="flex gap-2 mt-1">
-            <span className="text-destructive">◈ 420</span>
-            <span className="text-destructive text-[9px]">yours: ◈ 380</span>
-          </div>
-          <div className="text-destructive">00:08</div>
-        </div>
-
-        <p className="text-foreground text-center">
-          There are no notifications. <span className="text-accent">You must watch the grid.</span> If you
-          miss the flash, you miss the lot.
-        </p>
-      </div>
-    ),
-  },
-  {
-    title: 'TRIBUNAL FEED',
-    subtitle: 'HERESY & MARKET INTERFERENCE',
-    content: (
-      <div className="flex flex-col gap-4" style={{ fontSize: 12, lineHeight: '22px' }}>
-        <p className="text-foreground text-center">
-          The terminal on the right scrolls reports from the <span className="text-primary">Holy Tribunal</span>.
-          Most are routine. But when a <span className="text-accent">heresy report</span> appears from one 
-          of the underground sects...
-        </p>
-
-        <div className="border border-cell-border bg-cell p-2 mx-auto font-mono" style={{ width: 280, fontSize: 9, lineHeight: '15px' }}>
-          <div className="flex items-start gap-1.5 py-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground mt-1 shrink-0" />
-            <span className="text-muted-foreground">&gt; Reliquary index updated</span>
-          </div>
-          <div className="flex items-start gap-1.5 py-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground mt-1 shrink-0" />
-            <span className="text-muted-foreground">&gt; Provenance oracle responding</span>
-          </div>
-          <div className="flex items-start gap-1.5 py-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-sect-cyan mt-1 shrink-0" />
-            <span className="text-sect-cyan">[INTERCEPT] CATHARI communiqué re: relic substitution</span>
-          </div>
-          <div className="flex items-start gap-1.5 py-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-sect-magenta mt-1 shrink-0" />
-            <span className="text-sect-magenta">[BREACH] GNOSTIC ORDER proxy bid network flagged</span>
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center gap-2">
-          <p className="text-accent text-center font-mono" style={{ fontSize: 11 }}>
-            ▓ HERESY DETECTED — MARKET DELAY ▓
-          </p>
-          <p className="text-foreground text-center" style={{ fontSize: 11 }}>
-            The market <span className="text-accent">slows down for ~4 seconds</span>. Timers tick at half speed.
-            AI bidders pause entirely. Use these windows to bid unopposed.
+        {/* AI bidders */}
+        <div className="border border-cell-border bg-cell p-3">
+          <div className="text-primary font-mono text-[9px] mb-2" style={{ letterSpacing: 2 }}>AI BIDDERS</div>
+          <p className="text-foreground" style={{ fontSize: 12 }}>
+            Automated brokers compete for every relic. They bid more aggressively as lots
+            near expiry. When outbid, your cell <span className="text-destructive font-bold">flashes red</span> — 
+            if you miss it, you lose.
           </p>
         </div>
 
+        {/* Heresy mechanic */}
+        <div className="border border-accent/30 bg-accent/5 p-3">
+          <div className="text-accent font-mono text-[9px] mb-2" style={{ letterSpacing: 2 }}>HERESY EVENTS</div>
+          <p className="text-foreground" style={{ fontSize: 12 }}>
+            The terminal feed (right panel) scrolls reports from the Holy Tribunal.
+            When a <span className="text-accent font-bold">heresy report</span> appears, the market 
+            <span className="text-accent font-bold"> freezes for ~4 seconds</span>:
+          </p>
+          <ul className="mt-2 flex flex-col gap-1 text-foreground" style={{ fontSize: 11 }}>
+            <li>→ Timers tick at half speed</li>
+            <li>→ AI bidders <span className="text-accent">pause entirely</span></li>
+            <li>→ <span className="text-success">Your window to bid unopposed</span></li>
+          </ul>
+        </div>
+
+        {/* Sects */}
         <div className="flex gap-3 justify-center flex-wrap" style={{ fontSize: 9 }}>
           {[
             { name: 'FLAGELLANTS', cls: 'bg-sect-red' },
@@ -199,82 +205,100 @@ const PAGES = [
             { name: 'WALDENSIANS', cls: 'bg-sect-orange' },
           ].map(s => (
             <div key={s.name} className="flex items-center gap-1">
-              <div className={`w-2 h-2 rounded-full ${s.cls}`} />
-              <span className="text-muted-foreground">{s.name}</span>
+              <div className={`w-2.5 h-2.5 rounded-full ${s.cls}`} style={{ boxShadow: '0 0 4px currentColor' }} />
+              <span className="text-muted-foreground font-mono">{s.name}</span>
             </div>
           ))}
         </div>
+
+        <p className="text-muted-foreground text-center font-mono" style={{ fontSize: 10 }}>
+          Watch the terminal. Exploit the chaos.
+        </p>
       </div>
     ),
   },
   {
-    title: 'SAINTS',
-    subtitle: 'YOUR COLLECTION',
+    title: 'COMPLETING SAINTS',
+    subtitle: 'THE ENDGAME',
     content: (
       <div className="flex flex-col gap-5" style={{ fontSize: 12, lineHeight: '22px' }}>
         <p className="text-foreground text-center">
-          The top bar tracks your progress toward completing each saint.
-          Collect <span className="text-primary">every relic</span> of a saint to complete them.
+          The <span className="text-primary font-bold">saint tracker</span> at the top shows your collection progress.
+          Each saint has a set number of relics scattered across the exchange.
         </p>
 
-        <div className="border border-cell-border bg-cell-titlebar px-3 py-2 mx-auto font-mono" style={{ fontSize: 10, lineHeight: '18px' }}>
-          <div className="flex gap-4">
-            <span className="text-muted-foreground">
-              AMBROSE <span className="text-primary">███░░░░░░░░░</span> 3/12
-            </span>
-            <span className="text-muted-foreground">
-              LUCIA <span className="text-primary">██████░░░░</span> 6/10
-            </span>
+        {/* Mock saint tracker */}
+        <div className="border border-cell-border bg-cell-titlebar px-4 py-2 mx-auto font-mono" style={{ fontSize: 10, lineHeight: '20px' }}>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground" style={{ width: 80 }}>AMBROSE</span>
+              <div className="flex gap-0.5">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className={`${i < 3 ? 'bg-primary' : 'bg-muted'}`} style={{ width: 12, height: 6 }} />
+                ))}
+              </div>
+              <span className="text-primary">3/12</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground" style={{ width: 80 }}>LUCIA</span>
+              <div className="flex gap-0.5">
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <div key={i} className={`${i < 10 ? 'bg-primary' : 'bg-muted'}`} style={{ width: 12, height: 6 }} />
+                ))}
+              </div>
+              <span className="text-accent">10/10 ✓</span>
+            </div>
           </div>
         </div>
 
-        <p className="text-foreground text-center">
-          When a saint is completed, the exchange pauses. Their name is rendered
-          across the grid. A moment of stillness. Then the market resumes.
-        </p>
-
-        <div className="flex flex-col items-center gap-1 mt-2">
-          <div className="text-accent font-mono" style={{ fontSize: 10, letterSpacing: 6 }}>
-            SAINT COMPLETE
+        <div className="border border-accent/30 bg-accent/5 p-3 text-center">
+          <p className="text-accent font-mono" style={{ fontSize: 11 }}>
+            When you complete a saint, the screen pauses:
+          </p>
+          <div className="mt-3 mb-1">
+            <div className="text-accent font-mono" style={{ fontSize: 9, letterSpacing: 6 }}>SAINT COMPLETE</div>
+            <div className="text-primary font-mono" style={{ fontSize: 32, letterSpacing: 3 }}>LUCIA</div>
           </div>
-          <div className="text-primary font-mono" style={{ fontSize: 28, letterSpacing: 3 }}>
-            AMBROSE
-          </div>
+          <p className="text-muted-foreground" style={{ fontSize: 10 }}>
+            A moment of reverence. Then the market resumes.
+          </p>
         </div>
       </div>
     ),
   },
   {
-    title: 'REMEMBER',
-    subtitle: 'FINAL BRIEFING',
+    title: 'QUICK REFERENCE',
+    subtitle: 'REMEMBER THIS',
     content: (
-      <div className="flex flex-col items-center gap-5">
-        <div className="flex flex-col gap-3" style={{ fontSize: 12, lineHeight: '22px', maxWidth: 420 }}>
-          <div className="flex gap-3 items-start">
-            <span className="text-accent font-mono shrink-0">◈</span>
-            <p className="text-foreground">Your budget is <span className="text-accent">◈ 5,000</span>. When it's gone, it's gone.</p>
-          </div>
-          <div className="flex gap-3 items-start">
-            <span className="text-accent font-mono shrink-0">◈</span>
-            <p className="text-foreground">Currency is only deducted when you <span className="text-success">win</span> a lot (timer hits zero and you're the highest bidder).</p>
-          </div>
-          <div className="flex gap-3 items-start">
-            <span className="text-accent font-mono shrink-0">◈</span>
-            <p className="text-foreground">New lots appear constantly. The grid never stops. Neither should you.</p>
-          </div>
-          <div className="flex gap-3 items-start">
-            <span className="text-accent font-mono shrink-0">◈</span>
-            <p className="text-foreground">Watch the tribunal feed for <span className="text-accent">heresy slowdowns</span> — they're your edge.</p>
-          </div>
-          <div className="flex gap-3 items-start">
-            <span className="text-accent font-mono shrink-0">◈</span>
-            <p className="text-foreground">Refresh the page to start a new game. There is no save.</p>
-          </div>
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-full border border-cell-border bg-cell">
+          <table className="w-full font-mono" style={{ fontSize: 11 }}>
+            <tbody>
+              {[
+                ['Click cell', 'Select lot for bidding'],
+                ['BID / Enter', 'Place your bid'],
+                ['ESC / click again', 'Deselect lot'],
+                ['Green dot', "You're winning"],
+                ['Red dot', "You've been outbid"],
+                ['Gold dot', 'Lot closing in < 15s'],
+                ['Red flash', 'Someone just outbid you'],
+                ['Gold flash', 'You just won a lot'],
+                ['▓ TRIBUNAL DELAY ▓', 'Market frozen — bid now!'],
+                ['◈ 5,000', 'Your total budget'],
+              ].map(([key, desc], i) => (
+                <tr key={i} className={i % 2 === 0 ? 'bg-cell' : 'bg-cell-titlebar'}>
+                  <td className="text-accent px-3 py-1.5 border-b border-cell-border" style={{ width: 170 }}>{key}</td>
+                  <td className="text-foreground px-3 py-1.5 border-b border-cell-border">{desc}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
-        <div className="text-muted-foreground font-mono text-center mt-4" style={{ fontSize: 10 }}>
+        <div className="text-muted-foreground font-mono text-center mt-2" style={{ fontSize: 10, lineHeight: '18px' }}>
           The grid is already moving behind this screen.<br />
-          Close this window when you're ready.
+          New lots are spawning. AI bidders are placing bids.<br />
+          <span className="text-accent">Close this window when you're ready.</span>
         </div>
       </div>
     ),
@@ -301,8 +325,8 @@ export default function TutorialOverlay({ onDismiss }: TutorialOverlayProps) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'hsl(240 12% 4% / 0.92)' }}>
-      <div className="border border-cell-border bg-cell flex flex-col" style={{ width: 560, maxHeight: '85vh' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95">
+      <div className="border border-cell-border bg-cell flex flex-col" style={{ width: 580, maxHeight: '88vh' }}>
         {/* Title bar */}
         <div className="flex items-center justify-between bg-cell-titlebar px-2 border-b border-cell-border shrink-0" style={{ height: 20 }}>
           <span className="text-[9px] text-muted-foreground font-mono">BRIEFING.EXE — Page {page + 1}/{PAGES.length}</span>
@@ -326,20 +350,19 @@ export default function TutorialOverlay({ onDismiss }: TutorialOverlayProps) {
             </div>
           </div>
 
-          <div className="border-t border-cell-border w-full my-2" />
+          <div className="border-t border-cell-border w-full my-1" />
 
           <div className="w-full">{current.content}</div>
         </div>
 
         {/* Navigation */}
         <div className="flex items-center justify-between px-4 py-2 border-t border-cell-border bg-cell-titlebar shrink-0">
-          {/* Page dots */}
           <div className="flex gap-1.5">
             {PAGES.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setPage(i)}
-                className={`rounded-full transition-colors ${i === page ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+                className={`rounded-full transition-colors ${i === page ? 'bg-primary' : i < page ? 'bg-primary/40' : 'bg-muted-foreground/30'}`}
                 style={{ width: 6, height: 6 }}
               />
             ))}
