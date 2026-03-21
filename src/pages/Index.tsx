@@ -20,6 +20,7 @@ export default function Index() {
   const [dims, setDims] = useState({ w: window.innerWidth, h: window.innerHeight });
   const [messages, setMessages] = useState<HerasyReport[]>([]);
   const [slowedUntil, setSlowedUntil] = useState(0);
+  const [showTutorial, setShowTutorial] = useState(true);
   const msgCounter = useRef(0);
   const tickSkip = useRef(false);
 
