@@ -2,12 +2,11 @@ import { GameState, Lot, Saint } from './types';
 import { SAINTS_DATA, getRelicClass, generateProvenance } from './data';
 
 const STARTING_CURRENCY = 5000;
-const INITIAL_LOTS = 20;
-const MAX_LOTS = 35;
-const MIN_LOTS = 15;
-const LOT_SPAWN_INTERVAL = 4000; // ms
+const INITIAL_LOTS = 18;
+const MAX_LOTS = 30;
+const LOT_SPAWN_INTERVAL = 5000;
 const TICK_INTERVAL = 1000;
-const AI_BID_INTERVAL = 2000;
+const AI_BID_INTERVAL = 3000;
 
 function makeLotId(counter: number): string {
   return `LOT-${String(counter).padStart(4, '0')}`;
@@ -17,39 +16,54 @@ function randomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function createLot(counter: number, saints: Saint[]): Lot {
-  const saintData = SAINTS_DATA[Math.floor(Math.random() * SAINTS_DATA.length)];
-  const saint = saints.find(s => s.id === saintData.id)!;
-  const availableRelics = saintData.relics.filter(r => !saint.collectedRelics.includes(r));
-  const relicName = availableRelics.length > 0
-    ? availableRelics[Math.floor(Math.random() * availableRelics.length)]
-    : saintData.relics[Math.floor(Math.random() * saintData.relics.length)];
+// Track which relics are currently on the market to avoid duplicates
+function getActiveRelicIds(lots: Lot[]): Set<string> {
+  return new Set(lots.filter(l => l.status === 'active').map(l => l.relic.id));
+}
 
-  const partIndex = saintData.relics.indexOf(relicName);
-  const startingBid = randomInt(20, 200);
-  const totalTime = randomInt(30, 120);
+function createLot(counter: number, saints: Saint[], existingLots: Lot[]): Lot | null {
+  const activeRelicIds = getActiveRelicIds(existingLots);
 
-  return {
-    id: makeLotId(counter),
-    relic: {
-      id: `${saintData.id}-${partIndex}`,
-      name: relicName,
-      saintId: saintData.id,
-      saintName: saintData.name,
-      relicClass: getRelicClass(relicName),
-      provenance: generateProvenance(saintData.provenance),
-      partIndex,
-    },
-    currentBid: startingBid,
-    yourBid: null,
-    bidCount: randomInt(0, 3),
-    timeRemaining: totalTime,
-    totalTime,
-    status: 'active',
-    weight: 1,
-    flash: null,
-    flashUntil: 0,
-  };
+  // Try up to 10 times to find a non-duplicate relic
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const saintData = SAINTS_DATA[Math.floor(Math.random() * SAINTS_DATA.length)];
+    const saint = saints.find(s => s.id === saintData.id)!;
+    const availableRelics = saintData.relics.filter(r => {
+      const relicId = `${saintData.id}-${saintData.relics.indexOf(r)}`;
+      return !saint.collectedRelics.includes(r) && !activeRelicIds.has(relicId);
+    });
+
+    if (availableRelics.length === 0) continue;
+
+    const relicName = availableRelics[Math.floor(Math.random() * availableRelics.length)];
+    const partIndex = saintData.relics.indexOf(relicName);
+    const startingBid = randomInt(15, 150);
+    const totalTime = randomInt(45, 150);
+
+    return {
+      id: makeLotId(counter),
+      relic: {
+        id: `${saintData.id}-${partIndex}`,
+        name: relicName,
+        saintId: saintData.id,
+        saintName: saintData.name,
+        relicClass: getRelicClass(relicName),
+        provenance: generateProvenance(saintData.provenance),
+        partIndex,
+      },
+      currentBid: startingBid,
+      yourBid: null,
+      bidCount: randomInt(0, 2),
+      timeRemaining: totalTime,
+      totalTime,
+      status: 'active',
+      weight: 1,
+      flash: null,
+      flashUntil: 0,
+    };
+  }
+
+  return null;
 }
 
 export function initGame(): GameState {
@@ -62,7 +76,8 @@ export function initGame(): GameState {
 
   const lots: Lot[] = [];
   for (let i = 0; i < INITIAL_LOTS; i++) {
-    lots.push(createLot(i + 1, saints));
+    const lot = createLot(i + 1, saints, lots);
+    if (lot) lots.push(lot);
   }
 
   return {
@@ -98,6 +113,9 @@ export function tick(state: GameState, now: number): GameState {
   let { lots, saints, currency, completedSaint, lotCounter } = state;
   let newCompletedSaint: string | null = completedSaint;
 
+  // Clone saints array
+  saints = saints.map(s => ({ ...s }));
+
   lots = lots.map(lot => {
     if (lot.status !== 'active') return lot;
 
@@ -110,11 +128,12 @@ export function tick(state: GameState, now: number): GameState {
 
     l.timeRemaining = Math.max(0, l.timeRemaining - 1);
 
-    // Update weight based on time/activity
+    // Update weight based on time/activity — gentler changes
     const timeRatio = l.timeRemaining / l.totalTime;
-    const activityBoost = Math.min(l.bidCount * 0.15, 1);
-    l.weight = 0.5 + (1 - timeRatio) * 1.5 + activityBoost;
-    if (l.timeRemaining < 15) l.weight += 1;
+    const activityBoost = Math.min(l.bidCount * 0.1, 0.8);
+    const hasYourBid = l.yourBid !== null ? 0.5 : 0;
+    l.weight = 0.8 + (1 - timeRatio) * 0.8 + activityBoost + hasYourBid;
+    if (l.timeRemaining < 15) l.weight += 0.5;
 
     // Lot expires
     if (l.timeRemaining <= 0) {
@@ -144,15 +163,14 @@ export function tick(state: GameState, now: number): GameState {
     }
   });
 
-  // Remove closed/won/lost lots after a short delay (keep for 3s for visual)
+  // Remove expired lots after 2s
   lots = lots.filter(l => {
     if (l.status === 'won' || l.status === 'lost' || l.status === 'closed') {
-      return l.timeRemaining > -3;
+      return l.timeRemaining > -2;
     }
     return true;
   });
 
-  // Decrement time for removed lots
   lots = lots.map(l => {
     if (l.status === 'won' || l.status === 'lost' || l.status === 'closed') {
       return { ...l, timeRemaining: l.timeRemaining - 1 };
@@ -163,7 +181,7 @@ export function tick(state: GameState, now: number): GameState {
   return {
     ...state,
     lots,
-    saints: [...saints],
+    saints,
     currency,
     completedSaint: newCompletedSaint,
     lotCounter,
@@ -174,7 +192,9 @@ export function spawnLot(state: GameState): GameState {
   if (state.lots.filter(l => l.status === 'active').length >= MAX_LOTS) return state;
 
   const newCounter = state.lotCounter + 1;
-  const newLot = createLot(newCounter, state.saints);
+  const newLot = createLot(newCounter, state.saints, state.lots);
+
+  if (!newLot) return state;
 
   return {
     ...state,
@@ -188,11 +208,11 @@ export function aiBids(state: GameState, now: number): GameState {
     if (lot.status !== 'active') return lot;
     if (lot.timeRemaining <= 0) return lot;
 
-    // Random chance of AI bid
-    const chance = lot.timeRemaining < 15 ? 0.3 : 0.08;
+    // Lower base chance, ramp up near expiry
+    const chance = lot.timeRemaining < 10 ? 0.2 : lot.timeRemaining < 30 ? 0.08 : 0.03;
     if (Math.random() > chance) return lot;
 
-    const increment = randomInt(5, Math.max(10, Math.floor(lot.currentBid * 0.15)));
+    const increment = randomInt(3, Math.max(8, Math.floor(lot.currentBid * 0.08)));
     const newBid = lot.currentBid + increment;
 
     const wasWinning = lot.yourBid !== null && lot.yourBid >= lot.currentBid;
@@ -202,7 +222,7 @@ export function aiBids(state: GameState, now: number): GameState {
       ...lot,
       currentBid: newBid,
       bidCount: lot.bidCount + 1,
-      weight: Math.min(lot.weight + 0.2, 3),
+      weight: Math.min(lot.weight + 0.15, 3),
       flash: wasWinning && nowOutbid ? 'outbid' as const : lot.flash,
       flashUntil: wasWinning && nowOutbid ? now + 1500 : lot.flashUntil,
     };
