@@ -14,7 +14,7 @@ function getStatusDot(lot: Lot): string {
   if (lot.yourBid !== null && lot.yourBid >= lot.currentBid) return 'bg-success';
   if (lot.yourBid !== null && lot.yourBid < lot.currentBid) return 'bg-destructive';
   if (lot.timeRemaining < 15) return 'bg-accent';
-  return 'bg-muted-foreground';
+  return '';
 }
 
 function getStatusColor(lot: Lot): string {
@@ -32,8 +32,8 @@ const GridCell = memo(({ node, lot, saintProgress, isSelected, onSelect }: GridC
   const timeStr = `${String(Math.floor(Math.max(0, lot.timeRemaining) / 60)).padStart(2, '0')}:${String(Math.max(0, lot.timeRemaining) % 60).padStart(2, '0')}`;
   const flashClass = lot.flash === 'outbid' ? 'cell-flash-outbid' : lot.flash === 'win' ? 'cell-flash-win' : '';
   const relicImage = getRelicImage(lot.relic.id);
+  const statusDot = getStatusDot(lot);
 
-  // Calculate image size relative to cell
   const imgSize = Math.min(node.w * 0.4, node.h * 0.45, 120);
 
   return (
@@ -51,15 +51,29 @@ const GridCell = memo(({ node, lot, saintProgress, isSelected, onSelect }: GridC
       }}
       onClick={() => onSelect(lot.id)}
     >
+      {/* Left edge status dot */}
+      {statusDot && (
+        <div
+          className={`absolute left-0 z-20 ${statusDot}`}
+          style={{
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            boxShadow: '0 0 6px currentColor',
+          }}
+        />
+      )}
+
       {/* Title bar */}
       <div className="flex items-center justify-between bg-cell-titlebar px-1.5" style={{ height: 16 }}>
         <span className="text-[9px] text-muted-foreground truncate">{lot.id}</span>
-        <div className={`w-1.5 h-1.5 rounded-full ${getStatusDot(lot)}`} />
+        <div className={`w-1.5 h-1.5 rounded-full ${statusDot || 'bg-muted-foreground'}`} />
       </div>
 
       {/* Content with image */}
       <div className="relative flex-1 p-1.5" style={{ height: node.h - 16 }}>
-        {/* Text info */}
         <div className="flex flex-col gap-0.5 relative z-10" style={{ fontSize: isTiny ? 9 : isSmall ? 10 : 11 }}>
           {!isTiny && (
             <div className="text-foreground font-mono truncate" style={{ fontSize: isSmall ? 10 : 13, fontWeight: 700 }}>
@@ -86,7 +100,6 @@ const GridCell = memo(({ node, lot, saintProgress, isSelected, onSelect }: GridC
           </div>
         </div>
 
-        {/* Relic image — positioned bottom-right */}
         {showImage && (
           <img
             src={relicImage}
