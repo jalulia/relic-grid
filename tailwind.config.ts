@@ -59,6 +59,13 @@ export default {
           titlebar: "hsl(var(--cell-titlebar))",
           border: "hsl(var(--cell-border))",
         },
+        sect: {
+          red: "hsl(var(--sect-red))",
+          cyan: "hsl(var(--sect-cyan))",
+          magenta: "hsl(var(--sect-magenta))",
+          lime: "hsl(var(--sect-lime))",
+          orange: "hsl(var(--sect-orange))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
