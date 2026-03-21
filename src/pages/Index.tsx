@@ -8,6 +8,7 @@ import SaintTracker from '../components/SaintTracker';
 import SaintCompleteOverlay from '../components/SaintCompleteOverlay';
 import BidBar from '../components/BidBar';
 import TerminalFeed from '../components/TerminalFeed';
+import TutorialOverlay from '../components/TutorialOverlay';
 
 const HERESY_SLOWDOWN_MS = 4000; // market slows for 4s after heresy
 const FEED_INTERVAL = 2500; // new message every 2.5s
@@ -19,6 +20,7 @@ export default function Index() {
   const [dims, setDims] = useState({ w: window.innerWidth, h: window.innerHeight });
   const [messages, setMessages] = useState<HerasyReport[]>([]);
   const [slowedUntil, setSlowedUntil] = useState(0);
+  const [showTutorial, setShowTutorial] = useState(true);
   const msgCounter = useRef(0);
   const tickSkip = useRef(false);
 
@@ -198,6 +200,7 @@ export default function Index() {
       </div>
 
       <SaintCompleteOverlay saintName={game.completedSaint} onDone={handleSaintDone} />
+      {showTutorial && <TutorialOverlay onDismiss={() => setShowTutorial(false)} />}
     </div>
   );
 }
