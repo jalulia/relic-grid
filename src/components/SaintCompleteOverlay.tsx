@@ -11,6 +11,7 @@ export default function SaintCompleteOverlay({ saintName, onDone }: Props) {
   useEffect(() => {
     if (saintName) {
       setVisible(true);
+      playWololo();
       const timer = setTimeout(() => {
         setVisible(false);
         onDone();
