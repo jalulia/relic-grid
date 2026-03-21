@@ -86,7 +86,6 @@ export default function Index() {
 
       if (isHeresy) {
         setSlowedUntil(Date.now() + HERESY_SLOWDOWN_MS);
-        playWololo();
       }
     }, FEED_INTERVAL);
     return () => clearInterval(interval);
