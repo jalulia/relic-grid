@@ -53,12 +53,9 @@ const GridCell = memo(({ node, lot, saintProgress, isSelected, onSelect }: GridC
   const hasWololo = useMemo(() => hashNum(lot.id) % 20 === 0, [lot.id]);
 
   const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     onSelect(lot.id);
-    // If this cell has a wololo, play the sound
-    if (hasWololo) {
-      e.stopPropagation();
-      playWololo();
-    }
+    if (hasWololo) playWololo();
   };
 
   return (

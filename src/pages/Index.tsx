@@ -94,7 +94,7 @@ export default function Index() {
   }, []);
 
   const handleSelect = useCallback((lotId: string) => {
-    setSelectedLotId(prev => prev === lotId ? null : lotId);
+    setSelectedLotId(lotId);
   }, []);
 
   const handleCloseBar = useCallback(() => {
