@@ -163,7 +163,9 @@ export default function Index() {
       {/* Main area: grid + terminal */}
       <div className="flex flex-1 overflow-hidden">
         {/* Grid */}
-        <div className="relative flex-1 overflow-hidden">
+        <div className="relative flex-1 overflow-hidden" style={{ backgroundImage: 'url(/images/relics/dust-bg.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+          {/* Dust overlay darkened */}
+          <div className="absolute inset-0 z-0" style={{ backgroundColor: 'hsl(240 12% 4% / 0.88)' }} />
           {nodes.map(node => {
             if (!node.lotId) return null;
             const lot = lotMap.get(node.lotId);
