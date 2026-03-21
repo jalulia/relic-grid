@@ -38,6 +38,8 @@ function hashNum(str: string): number {
 const GridCell = memo(({ node, lot, saintProgress, isSelected, onSelect }: GridCellProps) => {
   const isSmall = node.w < 200 || node.h < 120;
   const isTiny = node.w < 150 || node.h < 90;
+  const hasBid = lot.yourBid !== null;
+  const isWinning = hasBid && lot.yourBid! >= lot.currentBid;
 
   const timeStr = `${String(Math.floor(Math.max(0, lot.timeRemaining) / 60)).padStart(2, '0')}:${String(Math.max(0, lot.timeRemaining) % 60).padStart(2, '0')}`;
   const flashClass = lot.flash === 'outbid' ? 'cell-flash-outbid' : lot.flash === 'win' ? 'cell-flash-win' : '';
