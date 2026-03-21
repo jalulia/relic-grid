@@ -200,6 +200,7 @@ export default function Index() {
       </div>
 
       <SaintCompleteOverlay saintName={game.completedSaint} onDone={handleSaintDone} />
+      {showTutorial && <TutorialOverlay onDismiss={() => setShowTutorial(false)} />}
     </div>
   );
 }
