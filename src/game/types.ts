@@ -20,6 +20,7 @@ export interface Lot {
   weight: number; // for grid sizing
   flash: 'outbid' | 'win' | null;
   flashUntil: number;
+  sniped: boolean; // true after snipe extension applied (once per lot)
 }
 
 export interface Saint {

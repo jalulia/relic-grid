@@ -13,20 +13,27 @@ export default function BidPanel({ lot, saintProgress, currency, onBid, onClose 
   const [bidValue, setBidValue] = useState('');
   const [confirm, setConfirm] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const prevLotId = useRef<string | null>(null);
 
+  // Only reset bid value when the selected lot changes, NOT on every currentBid update
   useEffect(() => {
-    if (lot) {
+    if (lot && lot.id !== prevLotId.current) {
       setBidValue(String(lot.currentBid + 10));
       setTimeout(() => inputRef.current?.focus(), 50);
+      setConfirm(null);
     }
-    setConfirm(null);
-  }, [lot?.id, lot?.currentBid]);
+    prevLotId.current = lot?.id ?? null;
+  }, [lot?.id]);
+
+  const bidNum = parseInt(bidValue);
+  const isBelowCurrent = lot && !isNaN(bidNum) && bidNum <= lot.currentBid;
 
   const doBid = useCallback((amount: number) => {
     if (!lot) return;
     if (amount > lot.currentBid && amount <= currency) {
       onBid(lot.id, amount);
       setConfirm(`BID PLACED ◈ ${amount}`);
+      setBidValue(String(amount + 10));
       setTimeout(() => setConfirm(null), 2000);
     }
   }, [lot, currency, onBid]);
@@ -52,16 +59,21 @@ export default function BidPanel({ lot, saintProgress, currency, onBid, onClose 
       <div className="flex flex-col items-center justify-center border-b border-cell-border bg-cell-titlebar shrink-0 px-3" style={{ height: 140 }}>
         <span className="text-muted-foreground font-mono text-[10px]">Select a lot to bid</span>
         <span className="text-accent font-mono text-[11px] mt-1">◈ {currency}</span>
+        <div className="text-muted-foreground font-mono text-[8px] mt-3 text-center leading-relaxed">
+          <span className="text-primary">J/K</span> navigate · <span className="text-primary">1/2/3</span> quick-bid<br />
+          <span className="text-primary">Enter</span> bid +10 · <span className="text-primary">Esc</span> close
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col border-b border-cell-border bg-cell shrink-0 px-3 py-2 gap-1.5" style={{ height: 140 }}>
+    <div className="flex flex-col border-b border-cell-border bg-cell shrink-0 px-3 py-2 gap-1.5" style={{ height: 150 }}>
       {/* Lot info */}
       <div className="flex items-center justify-between">
         <span className="text-accent font-mono text-[10px]">{lot.id}</span>
         <div className="flex items-center gap-1.5">
+          {lot.sniped && <span className="text-accent text-[8px] font-mono">⚡EXTENDED</span>}
           {isWinning && <span className="text-success text-[9px] font-mono">● WINNING</span>}
           {isOutbid && <span className="text-destructive text-[9px] font-mono animate-pulse">● OUTBID</span>}
         </div>
@@ -80,16 +92,16 @@ export default function BidPanel({ lot, saintProgress, currency, onBid, onClose 
         </span>
       </div>
 
-      {/* Quick bid buttons */}
+      {/* Quick bid buttons with keybind hints */}
       <div className="flex gap-1">
-        {[10, 50, 100].map(inc => (
+        {[{ inc: 10, key: '1' }, { inc: 50, key: '2' }, { inc: 100, key: '3' }].map(({ inc, key }) => (
           <button
             key={inc}
-            className="flex-1 bg-secondary text-foreground font-mono hover:bg-primary hover:text-primary-foreground"
+            className="flex-1 bg-secondary text-foreground font-mono hover:bg-primary hover:text-primary-foreground transition-colors"
             style={{ fontSize: 10, height: 22 }}
             onClick={() => doBid(lot.currentBid + inc)}
           >
-            +{inc}
+            +{inc} <span className="text-muted-foreground text-[8px]">[{key}]</span>
           </button>
         ))}
       </div>
@@ -101,7 +113,7 @@ export default function BidPanel({ lot, saintProgress, currency, onBid, onClose 
           type="number"
           value={bidValue}
           onChange={e => setBidValue(e.target.value)}
-          className="flex-1 bg-input border border-cell-border text-foreground px-1.5 font-mono"
+          className={`flex-1 bg-input border text-foreground px-1.5 font-mono ${isBelowCurrent ? 'border-destructive' : 'border-cell-border'}`}
           style={{ fontSize: 10, height: 22 }}
           min={lot.currentBid + 1}
           max={currency}
@@ -119,6 +131,8 @@ export default function BidPanel({ lot, saintProgress, currency, onBid, onClose 
       <div className="flex items-center justify-between" style={{ fontSize: 9 }}>
         {confirm ? (
           <span className="text-success font-mono animate-pulse">{confirm}</span>
+        ) : isBelowCurrent ? (
+          <span className="text-destructive font-mono">⚠ Below current bid</span>
         ) : (
           <span className="text-muted-foreground font-mono">◈ {currency} avail</span>
         )}
