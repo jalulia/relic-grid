@@ -7,6 +7,9 @@ const MAX_LOTS = 30;
 const LOT_SPAWN_INTERVAL = 5000;
 const TICK_INTERVAL = 1000;
 const AI_BID_INTERVAL = 3000;
+const SNIPE_THRESHOLD = 5;
+const SNIPE_EXTENSION = 8;
+const SAINT_COMPLETION_BONUS_PER_RELIC = 500;
 
 function makeLotId(counter: number): string {
   return `LOT-${String(counter).padStart(4, '0')}`;
@@ -16,7 +19,6 @@ function randomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// Track which relics are currently on the market to avoid duplicates
 function getActiveRelicIds(lots: Lot[]): Set<string> {
   return new Set(lots.filter(l => l.status === 'active').map(l => l.relic.id));
 }
@@ -24,7 +26,6 @@ function getActiveRelicIds(lots: Lot[]): Set<string> {
 function createLot(counter: number, saints: Saint[], existingLots: Lot[]): Lot | null {
   const activeRelicIds = getActiveRelicIds(existingLots);
 
-  // Try up to 10 times to find a non-duplicate relic
   for (let attempt = 0; attempt < 10; attempt++) {
     const saintData = SAINTS_DATA[Math.floor(Math.random() * SAINTS_DATA.length)];
     const saint = saints.find(s => s.id === saintData.id)!;
@@ -60,6 +61,7 @@ function createLot(counter: number, saints: Saint[], existingLots: Lot[]): Lot |
       weight: 1,
       flash: null,
       flashUntil: 0,
+      sniped: false,
     };
   }
 
@@ -97,12 +99,23 @@ export function placeBid(state: GameState, lotId: string, amount: number): GameS
 
   const newLots = state.lots.map(l => {
     if (l.id !== lotId) return l;
+
+    // Snipe extension: if bid lands in last SNIPE_THRESHOLD seconds and not already sniped
+    let newTime = l.timeRemaining;
+    let newSniped = l.sniped;
+    if (l.timeRemaining <= SNIPE_THRESHOLD && !l.sniped) {
+      newTime = l.timeRemaining + SNIPE_EXTENSION;
+      newSniped = true;
+    }
+
     return {
       ...l,
       currentBid: amount,
       yourBid: amount,
       bidCount: l.bidCount + 1,
       weight: Math.min(l.weight + 0.3, 3),
+      timeRemaining: newTime,
+      sniped: newSniped,
     };
   });
 
@@ -113,7 +126,6 @@ export function tick(state: GameState, now: number): GameState {
   let { lots, saints, currency, completedSaint, lotCounter } = state;
   let newCompletedSaint: string | null = completedSaint;
 
-  // Clone saints array
   saints = saints.map(s => ({ ...s }));
 
   lots = lots.map(lot => {
@@ -121,21 +133,18 @@ export function tick(state: GameState, now: number): GameState {
 
     let l = { ...lot };
 
-    // Clear flash
     if (l.flash && now > l.flashUntil) {
       l.flash = null;
     }
 
     l.timeRemaining = Math.max(0, l.timeRemaining - 1);
 
-    // Update weight based on time/activity — gentler changes
     const timeRatio = l.timeRemaining / l.totalTime;
     const activityBoost = Math.min(l.bidCount * 0.1, 0.8);
     const hasYourBid = l.yourBid !== null ? 1.0 : 0;
     l.weight = 0.8 + (1 - timeRatio) * 0.8 + activityBoost + hasYourBid;
     if (l.timeRemaining < 15) l.weight += 0.5;
 
-    // Lot expires
     if (l.timeRemaining <= 0) {
       if (l.yourBid !== null && l.yourBid >= l.currentBid) {
         l.status = 'won';
@@ -149,7 +158,7 @@ export function tick(state: GameState, now: number): GameState {
     return l;
   });
 
-  // Process wins
+  // Process wins — with saint completion bonus
   lots.forEach(lot => {
     if (lot.status === 'won') {
       const saint = saints.find(s => s.id === lot.relic.saintId);
@@ -158,12 +167,13 @@ export function tick(state: GameState, now: number): GameState {
         currency -= lot.currentBid;
         if (saint.collectedRelics.length === saint.totalRelics) {
           newCompletedSaint = saint.name;
+          // Saint completion bonus!
+          currency += saint.totalRelics * SAINT_COMPLETION_BONUS_PER_RELIC;
         }
       }
     }
   });
 
-  // Remove expired lots after 2s
   lots = lots.filter(l => {
     if (l.status === 'won' || l.status === 'lost' || l.status === 'closed') {
       return l.timeRemaining > -2;
@@ -208,7 +218,6 @@ export function aiBids(state: GameState, now: number): GameState {
     if (lot.status !== 'active') return lot;
     if (lot.timeRemaining <= 0) return lot;
 
-    // Lower base chance, ramp up near expiry
     const chance = lot.timeRemaining < 10 ? 0.2 : lot.timeRemaining < 30 ? 0.08 : 0.03;
     if (Math.random() > chance) return lot;
 
@@ -218,6 +227,14 @@ export function aiBids(state: GameState, now: number): GameState {
     const wasWinning = lot.yourBid !== null && lot.yourBid >= lot.currentBid;
     const nowOutbid = lot.yourBid !== null && lot.yourBid < newBid;
 
+    // Snipe extension for AI bids too
+    let newTime = lot.timeRemaining;
+    let newSniped = lot.sniped;
+    if (lot.timeRemaining <= SNIPE_THRESHOLD && !lot.sniped) {
+      newTime = lot.timeRemaining + SNIPE_EXTENSION;
+      newSniped = true;
+    }
+
     return {
       ...lot,
       currentBid: newBid,
@@ -225,10 +242,12 @@ export function aiBids(state: GameState, now: number): GameState {
       weight: Math.min(lot.weight + 0.15, 3),
       flash: wasWinning && nowOutbid ? 'outbid' as const : lot.flash,
       flashUntil: wasWinning && nowOutbid ? now + 1500 : lot.flashUntil,
+      timeRemaining: newTime,
+      sniped: newSniped,
     };
   });
 
   return { ...state, lots };
 }
 
-export { TICK_INTERVAL, LOT_SPAWN_INTERVAL, AI_BID_INTERVAL };
+export { TICK_INTERVAL, LOT_SPAWN_INTERVAL, AI_BID_INTERVAL, SAINT_COMPLETION_BONUS_PER_RELIC };

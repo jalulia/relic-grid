@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { GameState } from '../game/types';
 import { initGame, placeBid, tick, spawnLot, aiBids, TICK_INTERVAL, LOT_SPAWN_INTERVAL, AI_BID_INTERVAL } from '../game/engine';
 import { buildBSP } from '../game/bsp';
@@ -10,11 +10,17 @@ import LotTicker from '../components/LotTicker';
 import BidPanel from '../components/BidPanel';
 import Collection from '../components/Collection';
 import TerminalFeed from '../components/TerminalFeed';
+import HeresyMeter from '../components/HeresyMeter';
 import TutorialOverlay from '../components/TutorialOverlay';
 
 const HERESY_SLOWDOWN_MS = 4000;
+const HERESY_SLOWDOWN_CRITICAL_MS = 7000;
 const FEED_INTERVAL = 2500;
 const HERESY_CHANCE = 0.35;
+const THREAT_DECAY_PER_TICK = 2;
+const THREAT_HERESY_BOOST = 18;
+const THREAT_SYSTEM_BOOST = 2;
+const REPORT_HERESY_COST = 50;
 
 export default function Index() {
   const [game, setGame] = useState<GameState>(() => initGame());
@@ -23,10 +29,17 @@ export default function Index() {
   const [messages, setMessages] = useState<HerasyReport[]>([]);
   const [slowedUntil, setSlowedUntil] = useState(0);
   const [showTutorial, setShowTutorial] = useState(true);
+  const [heresyThreat, setHeresyThreat] = useState(0);
   const msgCounter = useRef(0);
   const tickSkip = useRef(false);
 
   const isSlowed = Date.now() < slowedUntil;
+
+  // Sorted active lots for keyboard navigation
+  const sortedActiveLots = useMemo(
+    () => game.lots.filter(l => l.status === 'active').sort((a, b) => a.timeRemaining - b.timeRemaining),
+    [game.lots]
+  );
 
   useEffect(() => {
     const handler = () => setDims({ w: window.innerWidth, h: window.innerHeight });
@@ -45,6 +58,8 @@ export default function Index() {
         tickSkip.current = false;
       }
       setGame(prev => tick(prev, now));
+      // Decay threat
+      setHeresyThreat(prev => Math.max(0, prev - THREAT_DECAY_PER_TICK));
     }, TICK_INTERVAL);
     return () => clearInterval(interval);
   }, [slowedUntil]);
@@ -74,7 +89,17 @@ export default function Index() {
         const next = [...prev, msg];
         return next.length > 80 ? next.slice(-60) : next;
       });
-      if (isHeresy) setSlowedUntil(Date.now() + HERESY_SLOWDOWN_MS);
+      if (isHeresy) {
+        setHeresyThreat(prev => {
+          const newThreat = Math.min(100, prev + THREAT_HERESY_BOOST);
+          // Critical threat = longer freeze
+          const duration = newThreat >= 80 ? HERESY_SLOWDOWN_CRITICAL_MS : HERESY_SLOWDOWN_MS;
+          setSlowedUntil(Date.now() + duration);
+          return newThreat;
+        });
+      } else {
+        setHeresyThreat(prev => Math.min(100, prev + THREAT_SYSTEM_BOOST));
+      }
     }, FEED_INTERVAL);
     return () => clearInterval(interval);
   }, []);
@@ -84,6 +109,76 @@ export default function Index() {
       setSelectedLotId(null);
     }
   }, [game.lots, selectedLotId]);
+
+  // Keyboard controls
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Don't capture if typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        // Allow Enter to submit form naturally
+        return;
+      }
+
+      const currentIndex = selectedLotId
+        ? sortedActiveLots.findIndex(l => l.id === selectedLotId)
+        : -1;
+
+      switch (e.key) {
+        case 'j':
+        case 'ArrowDown': {
+          e.preventDefault();
+          const nextIndex = currentIndex < sortedActiveLots.length - 1 ? currentIndex + 1 : 0;
+          if (sortedActiveLots[nextIndex]) setSelectedLotId(sortedActiveLots[nextIndex].id);
+          break;
+        }
+        case 'k':
+        case 'ArrowUp': {
+          e.preventDefault();
+          const prevIndex = currentIndex > 0 ? currentIndex - 1 : sortedActiveLots.length - 1;
+          if (sortedActiveLots[prevIndex]) setSelectedLotId(sortedActiveLots[prevIndex].id);
+          break;
+        }
+        case '1': {
+          if (selectedLotId) {
+            const lot = game.lots.find(l => l.id === selectedLotId);
+            if (lot && lot.status === 'active') {
+              setGame(prev => placeBid(prev, selectedLotId, lot.currentBid + 10));
+            }
+          }
+          break;
+        }
+        case '2': {
+          if (selectedLotId) {
+            const lot = game.lots.find(l => l.id === selectedLotId);
+            if (lot && lot.status === 'active') {
+              setGame(prev => placeBid(prev, selectedLotId, lot.currentBid + 50));
+            }
+          }
+          break;
+        }
+        case '3': {
+          if (selectedLotId) {
+            const lot = game.lots.find(l => l.id === selectedLotId);
+            if (lot && lot.status === 'active') {
+              setGame(prev => placeBid(prev, selectedLotId, lot.currentBid + 100));
+            }
+          }
+          break;
+        }
+        case 'Enter': {
+          if (selectedLotId) {
+            const lot = game.lots.find(l => l.id === selectedLotId);
+            if (lot && lot.status === 'active') {
+              setGame(prev => placeBid(prev, selectedLotId, lot.currentBid + 10));
+            }
+          }
+          break;
+        }
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [selectedLotId, sortedActiveLots, game.lots]);
 
   const handleBid = useCallback((lotId: string, amount: number) => {
     setGame(prev => placeBid(prev, lotId, amount));
@@ -100,6 +195,22 @@ export default function Index() {
   const handleCloseBar = useCallback(() => {
     setSelectedLotId(null);
   }, []);
+
+  const handleReportHeresy = useCallback(() => {
+    if (game.currency < REPORT_HERESY_COST || isSlowed) return;
+    // Deduct cost
+    setGame(prev => ({ ...prev, currency: prev.currency - REPORT_HERESY_COST }));
+    // Max threat + trigger freeze
+    setHeresyThreat(100);
+    setSlowedUntil(Date.now() + HERESY_SLOWDOWN_CRITICAL_MS);
+    // Generate a heresy message
+    msgCounter.current += 1;
+    const msg = generateHeresyReport(msgCounter.current);
+    setMessages(prev => [...prev, {
+      ...msg,
+      message: `[PLAYER REPORT] ${msg.message}`,
+    }]);
+  }, [game.currency, isSlowed]);
 
   const trackerHeight = 28;
   const titleBarHeight = 22;
@@ -175,7 +286,7 @@ export default function Index() {
           })}
         </div>
 
-        {/* Right: BidPanel + Terminal + Collection */}
+        {/* Right: BidPanel + HeresyMeter + Terminal + Collection */}
         <div className="flex flex-col border-l border-cell-border bg-cell shrink-0" style={{ width: sidebarWidth }}>
           <BidPanel
             lot={selectedLot}
@@ -183,6 +294,12 @@ export default function Index() {
             currency={game.currency}
             onBid={handleBid}
             onClose={handleCloseBar}
+          />
+          <HeresyMeter
+            threat={heresyThreat}
+            currency={game.currency}
+            onReport={handleReportHeresy}
+            isSlowed={isSlowed}
           />
           <TerminalFeed messages={messages} isSlowed={isSlowed} />
           <Collection saints={game.saints} />
