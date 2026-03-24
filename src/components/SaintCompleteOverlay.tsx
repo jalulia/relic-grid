@@ -14,7 +14,7 @@ export default function SaintCompleteOverlay({ saintName, onDone }: Props) {
       const timer = setTimeout(() => {
         setVisible(false);
         onDone();
-      }, 2500);
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [saintName, onDone]);

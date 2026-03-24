@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCSAI SERIES 9 — INTEL SUBSYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --term-bg: #0A0C10; --term-surface: #12141A; --term-border: #1E2028;
+  --term-text: #C8CAD0; --term-text-dim: #6E7078; --term-amber: #D4A017;
+  --term-green: #2EAA4A; --term-red: #D43030; --term-cyan: #3AA8C8;
+  --term-blue: #2A5FD7; --term-violet: #9B5FC8;
+}
+html, body { height:100%; background:var(--term-bg); color:var(--term-text); font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:1.4; overflow:hidden; -webkit-font-smoothing:antialiased; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+.app { display:grid; grid-template-rows:28px 20px 1fr 30px; height:100vh; }
+.ticker-strip { display:flex; align-items:center; border-bottom:1px solid var(--term-border); background:var(--term-bg); overflow:visible; padding:0 12px; font-size:9px; letter-spacing:.04em; gap:16px; white-space:nowrap; position:relative; z-index:50; }
+.ticker-strip .ts-item { display:inline-flex; gap:4px; }
+.ticker-strip .ts-saint { color:var(--term-text-dim); font-weight:500; text-transform:uppercase; letter-spacing:.06em; }
+.ticker-strip .ts-prog { color:var(--term-text); }
+.ticker-strip .ts-bar { display:inline-block; width:40px; height:3px; background:var(--term-border); vertical-align:middle; position:relative; overflow:hidden; }
+.ticker-strip .ts-bar-fill { height:100%; background:var(--term-green); }
+.ts-item { cursor:pointer; }
+.ts-item:hover .ts-saint { color:var(--term-amber); }
+
+/* Floating encyclopedia windows */
+.term-window {
+  position:fixed; background:var(--term-bg);
+  border:1px solid var(--term-blue); z-index:200;
+}
+.term-window.size-saint { width:440px; }
+.term-window.size-sect { width:320px; }
+.term-window.size-relic { width:280px; }
+.tw-title-bar {
+  background:var(--term-surface); border-bottom:1px solid var(--term-border);
+  padding:5px 10px; display:flex; justify-content:space-between; align-items:center;
+  font-size:8px; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--term-blue); cursor:grab; user-select:none;
+}
+.tw-title-bar:active { cursor:grabbing; }
+.tw-close {
+  cursor:pointer; color:var(--term-text-dim); font-size:9px; font-weight:600;
+  letter-spacing:.06em;
+}
+.tw-close:hover { color:var(--term-text); }
+.tw-body { padding:12px; display:flex; gap:12px; }
+.tw-icon {
+  flex-shrink:0; width:100px; border:1px solid var(--term-border);
+  display:flex; align-items:center; justify-content:center;
+  background:var(--term-surface); padding:8px;
+}
+.tw-icon svg { width:100%; height:auto; }
+/* Sect windows: icon on top instead of side */
+.size-sect .tw-body { flex-direction:column; gap:8px; }
+.size-sect .tw-icon { width:100%; height:60px; padding:6px; }
+.size-sect .tw-icon svg { height:50px; width:auto; }
+.tw-info { flex:1; min-width:0; }
+.tw-name {
+  font-size:12px; font-weight:600; color:var(--term-amber);
+  letter-spacing:.06em; text-transform:uppercase; margin-bottom:2px; line-height:1.2;
+}
+.tw-subtitle {
+  font-size:9px; color:var(--term-text-dim); letter-spacing:.04em;
+  margin-bottom:8px; line-height:1.3;
+}
+.tw-divider { border-top:1px solid var(--term-border); margin:6px 0; }
+.tw-stat {
+  display:flex; justify-content:space-between; padding:2px 0; font-size:9px;
+}
+.tw-stat-label {
+  color:var(--term-text-dim); text-transform:uppercase;
+  letter-spacing:.08em; font-size:8px; font-weight:500;
+}
+.tw-stat-val { color:var(--term-text); font-weight:600; letter-spacing:.02em; }
+.tw-lore {
+  font-size:9px; color:var(--term-text-dim); line-height:1.5;
+  letter-spacing:.01em;
+}
+.tw-footer {
+  background:var(--term-surface); border-top:1px solid var(--term-border);
+  padding:4px 10px; font-size:7px; color:var(--term-text-dim);
+  letter-spacing:.08em; text-transform:uppercase;
+  display:flex; justify-content:space-between;
+}
+.header { display:flex; align-items:center; padding:0 12px; border-bottom:1px solid var(--term-border); background:var(--term-surface); font-size:10px; font-weight:600; letter-spacing:.10em; text-transform:uppercase; gap:8px; }
+.header .sys-id{color:var(--term-text)} .header .sys-sub{color:var(--term-text-dim);font-weight:400} .header .spacer{flex:1}
+.header .obol{color:var(--term-amber)} .header .day{color:var(--term-text-dim);font-weight:400}
+.header .live-wrap{display:flex;align-items:center;gap:4px}
+.header .live-dot{width:5px;height:5px;background:var(--term-green);animation:pulse 2s ease-in-out infinite}
+.body { display:grid; grid-template-columns:170px 1fr 260px; overflow:hidden; }
+.panel { border-right:1px solid var(--term-border); display:flex; flex-direction:column; overflow:hidden; }
+.panel:last-child{border-right:none}
+.panel-title { background:var(--term-surface); border-bottom:1px solid var(--term-border); padding:4px 10px; font-size:9px; font-weight:600; letter-spacing:.10em; text-transform:uppercase; color:var(--term-text-dim); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+.panel-title .badge{font-size:8px;font-weight:400;letter-spacing:.06em}
+.panel-content { flex:1; overflow-y:auto; overflow-x:hidden; }
+.panel-content::-webkit-scrollbar{width:3px} .panel-content::-webkit-scrollbar-track{background:var(--term-bg)} .panel-content::-webkit-scrollbar-thumb{background:var(--term-border)}
+.relic-item{padding:6px 10px;border-bottom:1px solid var(--term-border)}
+.relic-name{font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--term-text)}
+.relic-class{font-size:8px;font-weight:400;letter-spacing:.08em;text-transform:uppercase;color:var(--term-text-dim);margin-top:1px}
+.relic-price-row{display:flex;align-items:baseline;gap:6px;margin-top:3px}
+.relic-price{font-size:13px;font-weight:600;color:var(--term-amber);letter-spacing:.02em}
+.relic-delta{font-size:9px;font-weight:500}
+.relic-delta.up{color:var(--term-green)} .relic-delta.down{color:var(--term-red)} .relic-delta.flat{color:var(--term-text-dim)}
+.relic-spread{display:flex;gap:8px;margin-top:2px;font-size:8px;letter-spacing:.04em}
+.relic-spread-label{color:var(--term-text-dim);text-transform:uppercase}
+.relic-spread-val{color:var(--term-text)}
+.relic-vol{font-size:8px;color:var(--term-text-dim);margin-top:1px}
+.relic-sparkline{margin-top:3px}
+.relic-bar{height:3px;background:var(--term-border);margin-top:4px}
+.relic-bar-fill{height:100%;transition:width .8s ease}
+.center{display:flex;flex-direction:column;overflow:hidden}
+.faith-section{border-bottom:1px solid var(--term-border);flex-shrink:0}
+.faith-meter-wrap{padding:8px 12px 0 12px}
+.faith-labels{display:flex;justify-content:space-between;font-size:8px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}
+.faith-meter{height:10px;background:var(--term-border);position:relative;display:flex}
+.faith-meter-dissent{height:100%;background:var(--term-red);transition:width .6s ease}
+.faith-meter-ortho{height:100%;background:var(--term-green);transition:width .6s ease}
+.faith-indicator{position:absolute;top:-2px;width:2px;height:14px;background:#fff;transition:left .6s ease;z-index:2}
+.faith-ticks{display:flex;justify-content:space-between;padding:2px 0;font-size:7px;color:var(--term-text-dim);letter-spacing:.04em}
+.faith-chart-wrap{padding:0 12px;height:160px;position:relative}
+.faith-chart-wrap canvas{width:100%;height:100%;display:block}
+.faith-readout{padding:4px 12px 8px;display:flex;align-items:baseline;gap:10px}
+.faith-value{font-size:22px;font-weight:600;color:var(--term-amber);letter-spacing:.02em}
+.faith-status{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.faith-trend{font-size:9px;color:var(--term-text-dim);letter-spacing:.04em}
+.center-bottom{flex:1;display:grid;grid-template-columns:1fr 200px;overflow:hidden}
+.doctrine-section{border-right:1px solid var(--term-border);display:flex;flex-direction:column;overflow:hidden}
+.cards-row{display:flex;gap:1px;background:var(--term-border);flex-shrink:0}
+.card{flex:1;background:var(--term-bg);padding:6px 8px;cursor:pointer}
+.card:hover{background:var(--term-surface)}
+.card-name{font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--term-text);margin-bottom:2px}
+.card-cost{font-size:10px;font-weight:600;color:var(--term-amber);margin-bottom:2px}
+.card-effect{font-size:8px;color:var(--term-text-dim);letter-spacing:.02em;line-height:1.3;margin-bottom:4px}
+.card-deploy{font-size:8px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--term-blue)}
+.active-doctrines{padding:6px 8px;flex:1;overflow-y:auto}
+.active-doctrine{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:9px}
+.active-dot{width:5px;height:5px;background:var(--term-amber);animation:pulse 1.5s ease-in-out infinite;flex-shrink:0}
+.draw-btn{background:var(--term-surface);border:1px solid var(--term-border);border-top:none;padding:5px 8px;font-family:inherit;font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--term-text-dim);cursor:pointer;text-align:center;flex-shrink:0}
+.draw-btn:hover{color:var(--term-text);background:var(--term-border)}
+.intel-section{display:flex;flex-direction:column;overflow:hidden}
+.intel-block{padding:6px 8px;border-bottom:1px solid var(--term-border)}
+.intel-label{font-size:8px;font-weight:600;letter-spacing:.10em;text-transform:uppercase;color:var(--term-text-dim);margin-bottom:4px}
+.sect-row{display:flex;align-items:center;gap:5px;padding:2px 0;font-size:9px}
+.sect-dot{width:5px;height:5px;flex-shrink:0}
+.sect-name{width:70px;font-size:8px;letter-spacing:.04em;text-transform:uppercase;color:var(--term-text-dim)}
+.sect-bar{flex:1;height:3px;background:var(--term-border)}
+.sect-bar-fill{height:100%;transition:width .8s ease}
+.sect-pct{width:28px;text-align:right;font-size:8px;font-weight:500;color:var(--term-text-dim)}
+.intel-stat{display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:9px}
+.intel-stat-label{color:var(--term-text-dim);font-size:8px;letter-spacing:.06em;text-transform:uppercase}
+.intel-stat-value{font-weight:600;letter-spacing:.02em}
+.vol-bar{height:4px;background:var(--term-border);margin-top:3px}
+.vol-bar-fill{height:100%;transition:width .8s ease}
+.feed-panel{display:flex;flex-direction:column;overflow:hidden}
+.feed-content{flex:1;overflow-y:auto;padding:0}
+.feed-line{padding:2px 8px;font-size:10px;line-height:1.35;display:flex;gap:5px;border-bottom:1px solid rgba(30,32,40,.4)}
+.feed-dot{width:4px;height:4px;flex-shrink:0;margin-top:4px}
+.feed-time{color:var(--term-text-dim);font-size:9px;flex-shrink:0;width:42px}
+.feed-msg{flex:1;word-break:break-word}
+.fc-heresy{color:var(--term-red)} .fc-system{color:var(--term-cyan)} .fc-doctrine{color:var(--term-amber)} .fc-positive{color:var(--term-green)} .fc-trade{color:var(--term-text)} .fc-dim{color:var(--term-text-dim)}
+.fkeys{display:flex;align-items:stretch;border-top:1px solid var(--term-border);background:var(--term-surface)}
+.fkey{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;border-right:1px solid var(--term-border);font-size:10px;font-weight:400;letter-spacing:.06em;text-transform:uppercase;color:var(--term-text-dim);cursor:default;padding:0 4px}
+.fkey:last-child{border-right:none}
+.fkey .fnum{font-weight:600;color:var(--term-text);font-size:9px}
+.fkey.active{border:1px solid var(--term-blue);border-top:2px solid var(--term-blue);color:var(--term-blue);margin:-1px 0 0 0}
+.fkey.active .fnum{color:var(--term-blue)}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="header">
+  <span class="sys-id">PCSAI SERIES 9</span><span class="sys-sub">// INTEL SUBSYSTEM</span><span class="spacer"></span>
+  <span class="obol" id="obol-display">◈ 500</span><span class="day" id="day-display">DAY 01/12</span>
+  <span class="live-wrap"><span class="live-dot"></span><span style="color:var(--term-green);font-size:8px;letter-spacing:.10em;">LIVE</span></span>
+</div>
+<!-- SAINT PROGRESS TICKER -->
+<div class="ticker-strip" id="saint-ticker">
+  <span class="ts-item"><span class="ts-saint">AMBROSE</span><span class="ts-prog">0/12</span><span class="ts-bar"><span class="ts-bar-fill" style="width:0%"></span></span></span>
+  <span class="ts-item"><span class="ts-saint">LUCIA</span><span class="ts-prog">0/10</span><span class="ts-bar"><span class="ts-bar-fill" style="width:0%"></span></span></span>
+  <span class="ts-item"><span class="ts-saint">SEBASTIAN</span><span class="ts-prog">0/12</span><span class="ts-bar"><span class="ts-bar-fill" style="width:0%"></span></span></span>
+  <span class="ts-item"><span class="ts-saint">TERESA</span><span class="ts-prog">0/8</span><span class="ts-bar"><span class="ts-bar-fill" style="width:0%"></span></span></span>
+  <span class="ts-item"><span class="ts-saint">BARTHOLOMEW</span><span class="ts-prog">0/11</span><span class="ts-bar"><span class="ts-bar-fill" style="width:0%"></span></span></span>
+  <span class="ts-item"><span class="ts-saint">AGATHA</span><span class="ts-prog">0/9</span><span class="ts-bar"><span class="ts-bar-fill" style="width:0%"></span></span></span>
+  <span class="ts-item"><span class="ts-saint">FRANCIS</span><span class="ts-prog">0/13</span><span class="ts-bar"><span class="ts-bar-fill" style="width:0%"></span></span></span>
+  <span class="ts-item"><span class="ts-saint">CATHERINE</span><span class="ts-prog">0/10</span><span class="ts-bar"><span class="ts-bar-fill" style="width:0%"></span></span></span>
+</div>
+
+<!-- FLOATING ENCYCLOPEDIA WINDOWS CONTAINER -->
+<div id="encyc-container"></div>
+
+<div class="body">
+  <div class="panel">
+    <div class="panel-title"><span>MARKET PRICES</span><span class="badge" id="relic-count">5 RELICS</span></div>
+    <div class="panel-content" id="relic-ticker"></div>
+  </div>
+  <div class="center">
+    <div class="faith-section">
+      <div class="panel-title"><span>FAITH INDEX</span><span class="badge" id="faith-status-badge">STABLE MARKET</span></div>
+      <div class="faith-meter-wrap">
+        <div class="faith-labels"><span style="color:var(--term-red)">DISSENT</span><span style="color:var(--term-green)">ORTHODOXY</span></div>
+        <div class="faith-meter" id="faith-meter"><div class="faith-meter-dissent" id="faith-dissent" style="width:50%"></div><div class="faith-meter-ortho" id="faith-ortho" style="width:50%"></div><div class="faith-indicator" id="faith-indicator" style="left:50%"></div></div>
+        <div class="faith-ticks"><span>0</span><span style="color:var(--term-red)">20</span><span>35</span><span>50</span><span>75</span><span style="color:var(--term-green)">90</span><span>100</span></div>
+      </div>
+      <div class="faith-chart-wrap"><canvas id="faith-chart"></canvas></div>
+      <div class="faith-readout"><span class="faith-value" id="faith-value">50</span><span class="faith-status" id="faith-status" style="color:var(--term-text-dim)">STABLE MARKET</span><span class="faith-trend" id="faith-trend">▸ NEUTRAL</span></div>
+    </div>
+    <div class="center-bottom">
+      <div class="doctrine-section">
+        <div class="panel-title"><span>DOCTRINE DEPLOYMENT</span><span class="badge" id="hand-count">HAND: 0/3</span></div>
+        <div class="cards-row" id="cards-row"><div style="padding:8px;color:var(--term-text-dim);font-size:9px;letter-spacing:.06em;text-transform:uppercase;width:100%">NO CARDS — DRAW TO BEGIN</div></div>
+        <div class="active-doctrines" id="active-doctrines"><div class="intel-label">ACTIVE DOCTRINES</div><div style="font-size:9px;color:var(--term-text-dim)">NONE</div></div>
+        <button class="draw-btn" id="draw-btn" onclick="drawCards()">DRAW — 20 OB</button>
+      </div>
+      <div class="intel-section">
+        <div class="panel-title"><span>INTEL</span></div>
+        <div class="intel-block"><div class="intel-label">SECT ACTIVITY</div><div id="sect-activity"></div></div>
+        <div class="intel-block"><div class="intel-label">VOLATILITY MODIFIER</div><div class="intel-stat"><span class="intel-stat-label">SIGMA</span><span class="intel-stat-value" id="vol-value" style="color:var(--term-amber)">1.0x</span></div><div class="vol-bar"><div class="vol-bar-fill" id="vol-bar" style="width:20%;background:var(--term-amber)"></div></div></div>
+        <div class="intel-block"><div class="intel-label">AUTHENTICATION</div><div class="intel-stat"><span class="intel-stat-label">VERIFIED</span><span class="intel-stat-value" id="auth-verified" style="color:var(--term-green)">90%</span></div><div class="intel-stat"><span class="intel-stat-label">DISPUTED</span><span class="intel-stat-value" id="auth-disputed" style="color:var(--term-red)">10%</span></div></div>
+        <div class="intel-block"><div class="intel-label">MARKET SENTIMENT</div><div class="intel-stat"><span class="intel-stat-label">AI BUYERS</span><span class="intel-stat-value" id="ai-buyers" style="color:var(--term-cyan)">6</span></div><div class="intel-stat"><span class="intel-stat-label">PILGRIMS</span><span class="intel-stat-value" id="pilgrim-count">3</span></div><div class="intel-stat"><span class="intel-stat-label">DEMAND</span><span class="intel-stat-value" id="demand-level" style="color:var(--term-green)">MODERATE</span></div></div>
+        <div class="intel-block"><div class="intel-label">MARKET DEPTH</div><div class="intel-stat"><span class="intel-stat-label">ACTIVE LOTS</span><span class="intel-stat-value" id="active-lots" style="color:var(--term-amber)">18</span></div><div class="intel-stat"><span class="intel-stat-label">EXPIRING &lt;30s</span><span class="intel-stat-value" id="expiring-lots" style="color:var(--term-red)">3</span></div><div class="intel-stat"><span class="intel-stat-label">AVG SPREAD</span><span class="intel-stat-value" id="avg-spread" style="color:var(--term-text)">3.2%</span></div></div>
+        <div class="intel-block"><div class="intel-label">MOMENTUM</div><div class="intel-stat"><span class="intel-stat-label">CLASS I</span><span class="intel-stat-value" id="mom-c1" style="color:var(--term-green)">▲ +2.1%</span></div><div class="intel-stat"><span class="intel-stat-label">CLASS II</span><span class="intel-stat-value" id="mom-c2" style="color:var(--term-red)">▼ -0.8%</span></div><div class="intel-stat"><span class="intel-stat-label">CLASS III</span><span class="intel-stat-value" id="mom-c3" style="color:var(--term-text-dim)">▸ +0.1%</span></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="panel feed-panel">
+    <div class="panel-title"><span>TERMINAL FEED</span><span class="badge"><span class="live-dot" style="display:inline-block;width:4px;height:4px;vertical-align:middle;margin-right:3px"></span>LIVE</span></div>
+    <div class="panel-content feed-content" id="feed"></div>
+  </div>
+</div>
+<div class="fkeys">
+  <div class="fkey"><span class="fnum">F1</span> BUY</div>
+  <div class="fkey"><span class="fnum">F2</span> SELL</div>
+  <div class="fkey"><span class="fnum">F3</span> PORT</div>
+  <div class="fkey"><span class="fnum">F4</span> ENSHRINE</div>
+  <div class="fkey active"><span class="fnum">F5</span> INTEL</div>
+  <div class="fkey"><span class="fnum">F6</span> DOCTRINE</div>
+  <div class="fkey"><span class="fnum">F7</span> LOG</div>
+  <div class="fkey"><span class="fnum">F8</span> SYS</div>
+</div>
+</div>
+<script>
+const S={obols:500,day:1,tick:0,faithIndex:50,faithHistory:[50],trend:0,relics:[
+{name:'CROWN OF THORNS',cls:'PASSION I',base:340,price:340,delta:0,hist:[340],vol:9},
+{name:'HOLY LANCE',cls:'PASSION I',base:201,price:201,delta:0,hist:[201],vol:5},
+{name:'VEIL OF EDESSA',cls:'CONTACT II',base:187,price:187,delta:0,hist:[187],vol:8},
+{name:'MANDYLION',cls:'CONTACT III',base:121,price:121,delta:0,hist:[121],vol:4},
+{name:'FINGER OF THOMAS',cls:'CORPOREAL I',base:60,price:60,delta:0,hist:[60],vol:6}],
+sects:[{name:'FLAGELLANT',color:'#D43030',activity:30},{name:'CATHARI',color:'#3AA8C8',activity:20},
+{name:'BOGOMILS',color:'#5AAA40',activity:15},{name:'WALDENSIAN',color:'#D48A20',activity:25},
+{name:'GNOSTIC',color:'#9B5FC8',activity:40}],hand:[],active:[],verified:90,feedLines:[]};
+const DOCTRINES=[
+{name:'PAPAL BULL',cost:60,effect:'Class +15%, 3 days',faithDelta:4,dur:3},
+{name:'EXCOMMUNICATION',cost:80,effect:'Ban 1 AI trader, 2d',faithDelta:3,dur:2},
+{name:'MENDICANT PREACH',cost:40,effect:'Pilgrim demand +1',faithDelta:2,dur:1},
+{name:'HERESY ACCUSATION',cost:50,effect:'Index -8, dispute relic',faithDelta:-8,dur:0},
+{name:'JUBILEE DECREE',cost:100,effect:'Index +12, prices +10%',faithDelta:12,dur:3},
+{name:'INQUISITION',cost:70,effect:'Index +5, clear disputes',faithDelta:5,dur:2},
+{name:'RELIC TRANSLATION',cost:45,effect:'1 relic +20% perm',faithDelta:0,dur:0},
+{name:'INTERDICT',cost:90,effect:'Suppress AI 1d, -5%',faithDelta:-3,dur:1}];
+function rand(a,b){return a+Math.random()*(b-a)} function randInt(a,b){return Math.floor(rand(a,b+1))}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v))} function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function ts(){const m=Math.floor(S.tick*3/60),s=(S.tick*3)%60;return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+':'+String(randInt(0,59)).padStart(2,'0')}
+function addFeed(msg,cls){const colors={heresy:'#D43030',system:'#3AA8C8',doctrine:'#D4A017',positive:'#2EAA4A',trade:'#C8CAD0',dim:'#6E7078'};
+S.feedLines.unshift({time:ts(),msg,cls,color:colors[cls]||'#C8CAD0'});if(S.feedLines.length>60)S.feedLines.pop();renderFeed()}
+function renderFeed(){const el=document.getElementById('feed');el.innerHTML=S.feedLines.map(f=>{
+const isDot=f.cls!=='system'&&f.cls!=='dim';
+return`<div class="feed-line"><span class="feed-dot" style="background:${isDot?f.color:'transparent'}"></span><span class="feed-time">${f.time}</span><span class="feed-msg fc-${f.cls}">${isDot?'':'› '}${f.msg}</span></div>`}).join('')}
+function renderRelics(){document.getElementById('relic-ticker').innerHTML=S.relics.map(r=>{
+const pct=clamp(r.price/(r.base*1.5)*100,5,100),dcls=r.delta>0?'up':r.delta<0?'down':'flat',
+dsym=r.delta>0?'+':'',barC=r.delta>0?'var(--term-green)':r.delta<0?'var(--term-red)':'var(--term-amber)';
+const spread=Math.round(r.price*0.03),bid=Math.round(r.price-spread/2),ask=Math.round(r.price+spread/2);
+// sparkline
+let spark='';if(r.hist&&r.hist.length>2){const h=r.hist.slice(-20),mn=Math.min(...h),mx=Math.max(...h),rng=mx-mn||1;
+const pts=h.map((v,i)=>{const x=i/(h.length-1)*60;const y=18-(v-mn)/rng*16;return`${x},${y}`}).join(' ');
+spark=`<div class="relic-sparkline"><svg width="62" height="20" viewBox="0 0 62 20"><polyline points="${pts}" fill="none" stroke="${barC}" stroke-width="1"/></svg></div>`}
+return`<div class="relic-item"><div class="relic-name">${r.name}</div><div class="relic-class">${r.cls}</div><div class="relic-price-row"><span class="relic-price">◈ ${Math.round(r.price)}</span><span class="relic-delta ${dcls}">${dsym}${r.delta.toFixed(1)}%</span></div><div class="relic-spread"><span><span class="relic-spread-label">BID</span> <span class="relic-spread-val">${bid}</span></span><span><span class="relic-spread-label">ASK</span> <span class="relic-spread-val">${ask}</span></span><span><span class="relic-spread-label">VOL</span> <span class="relic-spread-val">${r.vol}</span></span></div>${spark}<div class="relic-bar"><div class="relic-bar-fill" style="width:${pct}%;background:${barC}"></div></div></div>`}).join('')}
+function renderSects(){document.getElementById('sect-activity').innerHTML=S.sects.map(s=>
+`<div class="sect-row"><span class="sect-dot" style="background:${s.color}"></span><span class="sect-name">${s.name}</span><div class="sect-bar"><div class="sect-bar-fill" style="width:${s.activity}%;background:${s.color}"></div></div><span class="sect-pct">${Math.round(s.activity)}%</span></div>`).join('')}
+const chartCanvas=document.getElementById('faith-chart'),ctx=chartCanvas.getContext('2d');
+function renderFaith(){const fi=S.faithIndex,pct=fi/100;
+document.getElementById('faith-dissent').style.width=((1-pct)*100)+'%';
+document.getElementById('faith-ortho').style.width=(pct*100)+'%';
+document.getElementById('faith-indicator').style.left=(pct*100)+'%';
+document.getElementById('faith-value').textContent=fi.toFixed(1);
+let status,sc;if(fi<20){status='SCHISM EVENT';sc='var(--term-red)'}else if(fi<35){status='DISSENT RISING';sc='var(--term-red)'}
+else if(fi<65){status='STABLE MARKET';sc='var(--term-text-dim)'}else if(fi<75){status='ORTHODOX LEAN';sc='var(--term-green)'}
+else if(fi<90){status='ORTHO ASCENDANT';sc='var(--term-green)'}else{status='PAPAL JUBILEE';sc='var(--term-green)'}
+document.getElementById('faith-status').textContent=status;document.getElementById('faith-status').style.color=sc;
+document.getElementById('faith-status-badge').textContent=status;
+const tv=S.trend,tsym=tv>.5?'▲':tv<-.5?'▼':'▸',tl=tv>.5?'RISING':tv<-.5?'FALLING':'NEUTRAL';
+document.getElementById('faith-trend').textContent=`${tsym} ${tl} (${tv>0?'+':''}${tv.toFixed(1)}/tick)`;
+const w=chartCanvas.width=chartCanvas.offsetWidth*2,h=chartCanvas.height=chartCanvas.offsetHeight*2;
+ctx.scale(2,2);const cw=w/2,ch=h/2;ctx.clearRect(0,0,cw,ch);
+[{y1:0,y2:20,c:'rgba(212,48,48,.06)'},{y1:20,y2:35,c:'rgba(212,48,48,.03)'},
+{y1:75,y2:90,c:'rgba(46,170,74,.03)'},{y1:90,y2:100,c:'rgba(46,170,74,.06)'}].forEach(z=>{
+const t=ch-(z.y2/100*ch),b=ch-(z.y1/100*ch);ctx.fillStyle=z.c;ctx.fillRect(0,t,cw,b-t)});
+[20,35,50,75,90].forEach(v=>{const y=ch-(v/100*ch);ctx.strokeStyle='rgba(30,32,40,.8)';ctx.lineWidth=.5;
+ctx.setLineDash([2,4]);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(cw,y);ctx.stroke();ctx.setLineDash([]);
+ctx.fillStyle='#6E7078';ctx.font='7px IBM Plex Mono';ctx.fillText(v,2,y-2)});
+if(S.faithHistory.length>1){const pts=S.faithHistory,step=cw/Math.max(pts.length-1,1);
+ctx.strokeStyle='#C8CAD0';ctx.lineWidth=1.5;ctx.beginPath();
+pts.forEach((v,i)=>{const x=i*step,y=ch-(v/100*ch);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});ctx.stroke();
+const lx=(pts.length-1)*step,ly=ch-(pts[pts.length-1]/100*ch);ctx.fillStyle='#D4A017';ctx.fillRect(lx-2,ly-2,4,4)}
+const vol=1+Math.abs(fi-50)/50,vc=vol>1.5?'var(--term-red)':vol>1.2?'var(--term-amber)':'var(--term-green)';
+document.getElementById('vol-value').textContent=vol.toFixed(1)+'x';document.getElementById('vol-value').style.color=vc;
+document.getElementById('vol-bar').style.width=(vol/2*100)+'%';document.getElementById('vol-bar').style.background=vc;
+document.getElementById('auth-verified').textContent=S.verified+'%';document.getElementById('auth-disputed').textContent=(100-S.verified)+'%'}
+function renderCards(){document.getElementById('hand-count').textContent='HAND: '+S.hand.length+'/3';
+if(!S.hand.length){document.getElementById('cards-row').innerHTML='<div style="padding:8px;color:var(--term-text-dim);font-size:9px;letter-spacing:.06em;text-transform:uppercase;width:100%">NO CARDS — DRAW TO BEGIN</div>';return}
+document.getElementById('cards-row').innerHTML=S.hand.map((c,i)=>
+`<div class="card" onclick="deployCard(${i})"><div class="card-name">${c.name}</div><div class="card-cost">◈ ${c.cost}</div><div class="card-effect">${c.effect}</div><div class="card-deploy">[DEPLOY]</div></div>`).join('')}
+function renderActive(){const el=document.getElementById('active-doctrines');
+if(!S.active.length){el.innerHTML='<div class="intel-label">ACTIVE DOCTRINES</div><div style="font-size:9px;color:var(--term-text-dim)">NONE</div>';return}
+el.innerHTML='<div class="intel-label">ACTIVE DOCTRINES</div>'+S.active.map(a=>
+`<div class="active-doctrine"><span class="active-dot"></span><span style="color:var(--term-amber);font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">${a.name}</span><span style="color:var(--term-text-dim);font-size:8px">${a.remaining}d</span></div>`).join('')}
+function drawCards(){if(S.obols<20){addFeed('INSUFFICIENT FUNDS — DRAW REQUIRES 20 OB','heresy');return}
+S.obols-=20;S.hand=[];const pool=[...DOCTRINES];for(let i=0;i<3;i++){S.hand.push({...pool[randInt(0,pool.length-1)]})}
+addFeed('Doctrine hand drawn — 3 cards acquired','doctrine');renderCards();renderHeader()}
+function deployCard(i){const c=S.hand[i];if(!c)return;if(S.obols<c.cost){addFeed('INSUFFICIENT FUNDS — '+c.name+' requires '+c.cost+' OB','heresy');return}
+S.obols-=c.cost;S.faithIndex=clamp(S.faithIndex+c.faithDelta,0,100);if(c.dur>0)S.active.push({name:c.name,remaining:c.dur});
+S.hand.splice(i,1);addFeed('DOCTRINE DEPLOYED: '+c.name+(c.faithDelta?(' [index '+(c.faithDelta>0?'+':'')+c.faithDelta+']'):''),'doctrine');
+renderCards();renderActive();renderFaith();renderHeader()}
+function renderHeader(){document.getElementById('obol-display').textContent='◈ '+Math.round(S.obols);
+document.getElementById('day-display').textContent='DAY '+String(S.day).padStart(2,'0')+'/12'}
+function gameTick(){S.tick++;const theta=.08,mu=50,sigma=2.5,noise=(Math.random()-.5)*2*sigma,rev=theta*(mu-S.faithIndex),old=S.faithIndex;
+S.faithIndex=clamp(S.faithIndex+rev+noise,2,98);S.trend=S.faithIndex-old;S.faithHistory.push(S.faithIndex);
+if(S.faithHistory.length>120)S.faithHistory.shift();
+const fb=(S.faithIndex-50)/500;S.relics.forEach(r=>{const ch=(Math.random()-.48+fb)*r.base*.04;
+r.price=clamp(r.price+ch,r.base*.4,r.base*1.8);r.delta=(r.price-r.base)/r.base*100;
+r.hist.push(r.price);if(r.hist.length>30)r.hist.shift();r.vol=clamp(r.vol+randInt(-2,2),1,15)});
+S.sects.forEach(s=>{s.activity=clamp(s.activity+(Math.random()-.5)*8,5,95)});
+const inc=randInt(8,15);S.obols+=inc;if(S.tick%3===0)addFeed('Tithe collected: +'+inc+' OB','dim');
+if(S.tick%20===0&&S.day<12){S.day++;addFeed('MARKET SESSION OPEN — DAY '+String(S.day).padStart(2,'0'),'positive');
+S.active=S.active.map(a=>({...a,remaining:a.remaining-1})).filter(a=>a.remaining>0);renderActive()}
+if(Math.random()<.3){const tr=['Brother Augustine','Borgia','Medici Liquidator','Pilgrim Caravan','Speculator Grimaldi'];
+const ac=['acquiring','selling','bidding on','evaluating','hoarding'];
+const sa=['TERESA','AMBROSE','SEBASTIAN','CATHERINE','LUCIA','FRANCIS'];
+addFeed(pick(tr)+' '+pick(ac)+' '+pick(sa)+' relics','trade')}
+// Market depth
+document.getElementById('active-lots').textContent=randInt(14,26);
+document.getElementById('expiring-lots').textContent=randInt(1,5);
+document.getElementById('avg-spread').textContent=(rand(1.8,4.5)).toFixed(1)+'%';
+// Momentum
+const m1=rand(-3,4),m2=rand(-3,3),m3=rand(-2,2);
+document.getElementById('mom-c1').textContent=(m1>0?'▲ +':'▼ ')+m1.toFixed(1)+'%';
+document.getElementById('mom-c1').style.color=m1>0?'var(--term-green)':'var(--term-red)';
+document.getElementById('mom-c2').textContent=(m2>0?'▲ +':'▼ ')+m2.toFixed(1)+'%';
+document.getElementById('mom-c2').style.color=m2>0?'var(--term-green)':'var(--term-red)';
+document.getElementById('mom-c3').textContent=(m3>0.3?'▲ +':m3<-0.3?'▼ ':'▸ ')+m3.toFixed(1)+'%';
+document.getElementById('mom-c3').style.color=m3>0.3?'var(--term-green)':m3<-0.3?'var(--term-red)':'var(--term-text-dim)';
+const pg=S.faithIndex>65?randInt(4,7):S.faithIndex>40?randInt(2,4):randInt(0,2);
+document.getElementById('pilgrim-count').textContent=pg;
+const dm=S.faithIndex>70?'HIGH':S.faithIndex>40?'MODERATE':'LOW';
+const dc=dm==='HIGH'?'var(--term-green)':dm==='LOW'?'var(--term-red)':'var(--term-amber)';
+document.getElementById('demand-level').textContent=dm;document.getElementById('demand-level').style.color=dc;
+renderRelics();renderSects();renderFaith();renderHeader()}
+function heresyEvent(){const sect=pick(S.sects),drop=randInt(4,10);
+S.faithIndex=clamp(S.faithIndex-drop,2,98);sect.activity=clamp(sect.activity+randInt(15,30),5,95);
+if(Math.random()<.3)S.verified=clamp(S.verified-randInt(3,8),50,100);
+addFeed('HERESY: '+sect.name+' uprising — market delay [index -'+drop+']','heresy');
+renderFaith();renderSects();setTimeout(heresyEvent,rand(8000,18000))}
+renderRelics();renderSects();renderFaith();renderCards();renderActive();renderHeader();
+addFeed('INTEL SUBSYSTEM ONLINE','system');addFeed('MARKET SESSION OPEN — DAY 01','positive');
+addFeed('Monitoring 5 relic classes','system');addFeed('FAITH INDEX: 50.0 — EQUILIBRIUM','doctrine');
+addFeed('Provenance oracle responding','dim');addFeed('Sanctity hash: valid','dim');
+setInterval(gameTick,3000);setTimeout(heresyEvent,rand(6000,12000));
+
+// ── ENCYCLOPEDIA ──
+const ENCYC={
+TERESA:{name:'ST. TERESA OF AVILA',sub:'Doctor of the Church, Carmelite Mystic. d. 1582',relics:8,prov:'AVILA',sig:'TRANSVERB. HEART',vol:'HIGH',volC:'var(--term-red)',
+lore:'Born Teresa Sánchez de Cepeda y Ahumada. Experienced the transverberation — an angel drove a golden spear through her heart repeatedly. The preserved heart, bearing a visible wound, remains in the Convento de Santa Teresa. Author of The Interior Castle. Reformed the Carmelite order against fierce institutional resistance.',
+icon:'<path d="M60 15 C60 15 40 30 40 50 C40 62 48 72 60 72 C72 72 80 62 80 50 C80 30 60 15 60 15Z" fill="none" stroke="#D43030" stroke-width="2"/><line x1="60" y1="28" x2="60" y2="62" stroke="#D4A017" stroke-width="1.5"/><line x1="45" y1="45" x2="75" y2="45" stroke="#D4A017" stroke-width="1.5"/><circle cx="60" cy="45" r="4" fill="#D43030" fill-opacity="0.4"/><rect x="50" y="78" width="20" height="16" fill="none" stroke="#6E7078" stroke-width="1"/><line x1="54" y1="82" x2="66" y2="82" stroke="#6E7078" stroke-width="0.5"/><line x1="54" y1="86" x2="66" y2="86" stroke="#6E7078" stroke-width="0.5"/><line x1="54" y1="90" x2="62" y2="90" stroke="#6E7078" stroke-width="0.5"/>'},
+AMBROSE:{name:'ST. AMBROSE OF MILAN',sub:'Bishop, Doctor of the Church. d. 397 AD',relics:12,prov:'MILAN',sig:'BEEHIVE SKULL',vol:'MODERATE',volC:'var(--term-amber)',
+lore:'Governor of Aemilia-Liguria before his election as bishop — while still unbaptized. Legend holds that a swarm of bees settled on his face as an infant, leaving honey on his lips. Patron of beekeepers and learning. Body discovered incorrupt in 835. His basilica in Milan houses his remains alongside SS. Gervasius and Protasius.',
+icon:'<rect x="46" y="8" width="28" height="84" fill="none" stroke="#D4A017" stroke-width="2"/><rect x="30" y="28" width="60" height="16" fill="none" stroke="#D4A017" stroke-width="2"/><circle cx="60" cy="56" r="10" fill="none" stroke="#D4A017" stroke-width="1"/><circle cx="54" cy="53" r="2" fill="#6E7078"/><circle cx="66" cy="53" r="2" fill="#6E7078"/><circle cx="60" cy="60" r="2" fill="#6E7078"/><circle cx="56" cy="48" r="1.5" fill="#D4A017" fill-opacity="0.4"/><circle cx="64" cy="48" r="1.5" fill="#D4A017" fill-opacity="0.4"/><circle cx="60" cy="44" r="1.5" fill="#D4A017" fill-opacity="0.4"/>'},
+LUCIA:{name:'ST. LUCIA OF SYRACUSE',sub:'Virgin Martyr. d. 304 AD',relics:10,prov:'VENICE',sig:'PRESERVED EYES',vol:'LOW',volC:'var(--term-green)',
+lore:'Consecrated her virginity to God. Her rejected suitor denounced her as a Christian during the Diocletian persecution. Legend says her eyes were gouged out — she is depicted carrying them on a plate. Body translated from Constantinople to Venice in 1204 during the Fourth Crusade. Patron of the blind, of Syracuse, and of eye diseases.',
+icon:'<circle cx="38" cy="40" r="14" fill="none" stroke="#3AA8C8" stroke-width="2"/><circle cx="38" cy="40" r="5" fill="#3AA8C8"/><circle cx="82" cy="40" r="14" fill="none" stroke="#3AA8C8" stroke-width="2"/><circle cx="82" cy="40" r="5" fill="#3AA8C8"/><line x1="52" y1="40" x2="68" y2="40" stroke="#6E7078" stroke-width="0.5" stroke-dasharray="2 2"/><rect x="30" y="65" width="60" height="20" fill="none" stroke="#6E7078" stroke-width="1"/><line x1="30" y1="75" x2="90" y2="75" stroke="#6E7078" stroke-width="0.5"/>'},
+SEBASTIAN:{name:'ST. SEBASTIAN',sub:'Praetorian Guard, Soldier Martyr. d. 288 AD',relics:12,prov:'ROME',sig:'ARROW-PIERCED RIB',vol:'HIGH',volC:'var(--term-red)',
+lore:'Captain of the Praetorian Guard under Diocletian. Secretly converted soldiers and prisoners. Sentenced to death by arrows — shot and left for dead. Nursed back to health by St. Irene of Rome. Returned to confront the Emperor and was beaten to death with clubs. Patron of soldiers, athletes, and plague victims.',
+icon:'<rect x="56" y="12" width="8" height="76" fill="#6E7078"/><circle cx="60" cy="16" r="6" fill="none" stroke="#6E7078" stroke-width="1.5"/><line x1="16" y1="30" x2="58" y2="40" stroke="#D43030" stroke-width="2"/><polygon points="14,28 14,34 20,32" fill="#D43030"/><line x1="104" y1="36" x2="62" y2="46" stroke="#D43030" stroke-width="2"/><polygon points="106,34 106,40 100,38" fill="#D43030"/><line x1="20" y1="58" x2="58" y2="60" stroke="#D43030" stroke-width="2"/><polygon points="18,56 18,62 24,60" fill="#D43030"/>'},
+CATHERINE:{name:'ST. CATHERINE OF SIENA',sub:'Doctor of the Church, Dominican Mystic. d. 1380',relics:10,prov:'SIENA',sig:'PRESERVED HEAD',vol:'MODERATE',volC:'var(--term-amber)',
+lore:'Experienced mystical marriage to Christ at age 21. Received the stigmata invisibly. Dictated The Dialogue while in ecstasy. Convinced Pope Gregory XI to return to Rome from Avignon. Her head was smuggled from Rome by Raymond of Capua in a bag of rose petals — guards saw only flowers. Head preserved in Basilica di San Domenico, Siena.',
+icon:'<circle cx="60" cy="30" r="18" fill="none" stroke="#D4A017" stroke-width="2"/><circle cx="60" cy="30" r="12" fill="none" stroke="#D4A017" stroke-width="0.5"/><circle cx="54" cy="26" r="2" fill="#6E7078"/><circle cx="66" cy="26" r="2" fill="#6E7078"/><line x1="56" y1="34" x2="64" y2="34" stroke="#6E7078" stroke-width="1"/><line x1="60" y1="48" x2="60" y2="80" stroke="#6E7078" stroke-width="1.5"/><line x1="40" y1="60" x2="80" y2="60" stroke="#6E7078" stroke-width="0.5"/><rect x="44" y="82" width="32" height="10" fill="none" stroke="#6E7078" stroke-width="1"/>'},
+FRANCIS:{name:'ST. FRANCIS OF ASSISI',sub:'Founder of Franciscans, Stigmatist. d. 1226',relics:13,prov:'ASSISI',sig:'STIGMATA CLOTH',vol:'HIGH',volC:'var(--term-red)',
+lore:'Son of a wealthy cloth merchant. Renounced his inheritance publicly by stripping naked in the town square. Founded the Order of Friars Minor. Received the stigmata on Mount La Verna in 1224 — the first recorded case. Most relics of any saint on the exchange. Stigmata relics command extreme premiums.',
+icon:'<circle cx="60" cy="22" r="8" fill="none" stroke="#6E7078" stroke-width="1.5"/><rect x="48" y="30" width="24" height="36" fill="none" stroke="#6E7078" stroke-width="1.5"/><circle cx="48" cy="40" r="4" fill="#D43030"/><circle cx="72" cy="40" r="4" fill="#D43030"/><circle cx="56" cy="66" r="4" fill="#D43030"/><circle cx="64" cy="66" r="4" fill="#D43030"/><circle cx="60" cy="50" r="4" fill="#D43030"/><line x1="28" y1="44" x2="48" y2="44" stroke="#6E7078" stroke-width="0.5"/><line x1="72" y1="44" x2="92" y2="44" stroke="#6E7078" stroke-width="0.5"/>'},
+BARTHOLOMEW:{name:'ST. BARTHOLOMEW THE APOSTLE',sub:'Apostle, Martyr. d. 71 AD',relics:11,prov:'ROME',sig:'FLAYED SKIN FRAGMENT',vol:'MODERATE',volC:'var(--term-amber)',
+lore:'One of the twelve apostles. Preached in Armenia, India, and Mesopotamia. Flayed alive and then beheaded on order of King Astyages. In Michelangelo\'s Last Judgment, he holds his own skin. Relics distributed between Rome (Basilica di San Bartolomeo) and Canterbury.',
+icon:'<rect x="44" y="8" width="32" height="80" fill="none" stroke="#6E7078" stroke-width="1.5"/><line x1="44" y1="20" x2="76" y2="20" stroke="#6E7078" stroke-width="0.5"/><line x1="44" y1="32" x2="76" y2="32" stroke="#6E7078" stroke-width="0.5"/><line x1="44" y1="44" x2="76" y2="44" stroke="#6E7078" stroke-width="0.5"/><line x1="44" y1="56" x2="76" y2="56" stroke="#6E7078" stroke-width="0.5"/><line x1="44" y1="68" x2="76" y2="68" stroke="#6E7078" stroke-width="0.5"/><line x1="44" y1="80" x2="76" y2="80" stroke="#6E7078" stroke-width="0.5"/><path d="M24 14 L44 8 L44 88 L24 82Z" fill="none" stroke="#D4A017" stroke-width="1" stroke-dasharray="3 3"/><path d="M96 14 L76 8 L76 88 L96 82Z" fill="none" stroke="#D4A017" stroke-width="1" stroke-dasharray="3 3"/>'},
+AGATHA:{name:'ST. AGATHA OF SICILY',sub:'Virgin Martyr. d. 251 AD',relics:9,prov:'CATANIA',sig:'FIRE-RESISTANT VEIL',vol:'MODERATE',volC:'var(--term-amber)',
+lore:'Rejected advances of Roman prefect Quintianus. Tortured by having her breasts cut off. In prison, visited by St. Peter who healed her wounds. Executed on a bed of hot coals. One year later, her veil was used to stop a lava flow from Mount Etna. Patron of Catania, bell-founders, and breast cancer patients.',
+icon:'<circle cx="60" cy="28" r="16" fill="none" stroke="#D43030" stroke-width="2"/><rect x="36" y="50" width="48" height="28" fill="none" stroke="#6E7078" stroke-width="1.5"/><line x1="36" y1="64" x2="84" y2="64" stroke="#6E7078" stroke-width="0.5"/><rect x="52" y="56" width="16" height="8" fill="#D4A017" fill-opacity="0.2"/><path d="M36 82 L40 90 L80 90 L84 82" fill="none" stroke="#D43030" stroke-width="1" stroke-dasharray="2 2"/>'},
+// Sects
+FLAGELLANT:{name:'FLAGELLANT MOVEMENT',sub:'Popular Penitential Heresy. 1259-1349+',relics:null,prov:null,sig:null,vol:null,
+lore:'Emerged during the Black Death. Public self-flagellation as penance superior to the sacraments. Introduced counterfeit penitential relics — bloodied whips, strips of flagellated skin — outside Church control. Their activity spikes prices on martyrdom and stigmata relics (Sebastian, Francis) as buyers seek authenticated pieces.',
+icon:'<line x1="60" y1="10" x2="60" y2="50" stroke="#D43030" stroke-width="2"/><line x1="50" y1="50" x2="70" y2="80" stroke="#D43030" stroke-width="1.5"/><line x1="50" y1="50" x2="40" y2="85" stroke="#D43030" stroke-width="1"/><line x1="50" y1="50" x2="30" y2="78" stroke="#D43030" stroke-width="1"/><circle cx="60" cy="10" r="3" fill="#D43030"/><circle cx="70" cy="80" r="2" fill="#D43030" fill-opacity="0.5"/><circle cx="40" cy="85" r="2" fill="#D43030" fill-opacity="0.5"/><circle cx="30" cy="78" r="2" fill="#D43030" fill-opacity="0.5"/>'},
+CATHARI:{name:'CATHAR HERESY',sub:'Dualist Sect. 12th-13th Century',relics:null,prov:null,sig:null,vol:null,
+lore:'Believed the material world was created by an evil deity. All physical objects — including saints\' bones — were irredeemably corrupt. Venerating a relic was worshipping the Devil\'s handiwork. The Albigensian Crusade (1209-1229) destroyed them. Their heresy events depress Catherine and Teresa prices — broad market downturn concentrated on female saints.',
+icon:'<circle cx="60" cy="40" r="25" fill="none" stroke="#3AA8C8" stroke-width="1.5"/><circle cx="60" cy="40" r="15" fill="none" stroke="#3AA8C8" stroke-width="0.5" stroke-dasharray="2 2"/><line x1="60" y1="15" x2="60" y2="65" stroke="#3AA8C8" stroke-width="0.5"/><line x1="35" y1="40" x2="85" y2="40" stroke="#3AA8C8" stroke-width="0.5"/><circle cx="60" cy="40" r="4" fill="#3AA8C8" fill-opacity="0.3"/>'},
+WALDENSIAN:{name:'WALDENSIAN MOVEMENT',sub:'Apostolic Poverty Heresy. 1173+',relics:null,prov:null,sig:null,vol:null,
+lore:'Founded by Peter Waldo in Lyon. Rejected relic veneration as simony — the buying and selling of spiritual goods. Targeted the commercialization of the sacred. Their heresy events disrupt expensive relics specifically: Class I prices drop while Class III remains unaffected. A progressive taxation on value.',
+icon:'<rect x="30" y="20" width="60" height="60" fill="none" stroke="#D48A20" stroke-width="1.5"/><line x1="30" y1="40" x2="90" y2="40" stroke="#D48A20" stroke-width="0.5"/><line x1="30" y1="60" x2="90" y2="60" stroke="#D48A20" stroke-width="0.5"/><line x1="50" y1="20" x2="50" y2="80" stroke="#D48A20" stroke-width="0.5"/><line x1="70" y1="20" x2="70" y2="80" stroke="#D48A20" stroke-width="0.5"/><line x1="34" y1="44" x2="46" y2="44" stroke="#D48A20" stroke-width="2"/><line x1="54" y1="24" x2="66" y2="24" stroke="#D48A20" stroke-width="2"/><line x1="74" y1="64" x2="86" y2="64" stroke="#D48A20" stroke-width="2"/>'},
+GNOSTIC:{name:'GNOSTIC ORDER',sub:'Esoteric Knowledge Sect',relics:null,prov:null,sig:null,vol:null,
+lore:'Claimed secret knowledge that invalidated public relics. Their heresy creates mild universal price depression and raises the uncertainty premium. Authentication challenges increase across all classes. The most unpredictable sect — their interventions are subtle and system-wide rather than targeted.',
+icon:'<polygon points="60,10 95,75 25,75" fill="none" stroke="#9B5FC8" stroke-width="1.5"/><polygon points="60,80 30,25 90,25" fill="none" stroke="#9B5FC8" stroke-width="1" stroke-dasharray="2 2"/><circle cx="60" cy="45" r="8" fill="none" stroke="#9B5FC8" stroke-width="1"/><circle cx="60" cy="45" r="2" fill="#9B5FC8"/>'},
+BOGOMILS:{name:'BOGOMIL HERESY',sub:'Balkan Dualist Sect. 10th Century+',relics:null,prov:null,sig:null,vol:null,
+lore:'Rejected the cross and physical devotion. Viewed the cross as an instrument of torture — venerating it was obscene. Their heresy depresses Passion-adjacent relics, creating buying windows for body-part-heavy saints like Bartholomew and Ambrose.',
+icon:'<line x1="60" y1="15" x2="60" y2="75" stroke="#5AAA40" stroke-width="2"/><line x1="35" y1="35" x2="85" y2="35" stroke="#5AAA40" stroke-width="2"/><line x1="42" y1="18" x2="78" y2="52" stroke="#5AAA40" stroke-width="1" stroke-dasharray="3 3"/><line x1="78" y1="18" x2="42" y2="52" stroke="#5AAA40" stroke-width="1" stroke-dasharray="3 3"/>'},
+};
+
+let encycZIndex = 200;
+let encycOffset = 0;
+
+function openEncyc(key, evt) {
+  const e = ENCYC[key]; if(!e) return;
+  const isSaint = e.relics !== null;
+  const sizeClass = isSaint ? 'size-saint' : 'size-sect';
+  const winW = isSaint ? 440 : 320;
+
+  const statsHtml = isSaint ? `
+    <div class="tw-divider"></div>
+    <div class="tw-stat"><span class="tw-stat-label">RELICS</span><span class="tw-stat-val">${e.relics}</span></div>
+    <div class="tw-stat"><span class="tw-stat-label">PROVENANCE</span><span class="tw-stat-val">${e.prov}</span></div>
+    <div class="tw-stat"><span class="tw-stat-label">SIGNATURE</span><span class="tw-stat-val">${e.sig}</span></div>
+    <div class="tw-stat"><span class="tw-stat-label">VOLATILITY</span><span class="tw-stat-val" style="color:${e.volC}">${e.vol}</span></div>` : '';
+
+  const win = document.createElement('div');
+  win.className = 'term-window ' + sizeClass;
+  encycZIndex++;
+  win.style.zIndex = encycZIndex;
+
+  const winId = 'tw-' + Date.now();
+  win.id = winId;
+
+  win.innerHTML = `
+    <div class="tw-title-bar"><span>${isSaint?'ASSET CLASS':'THREAT'} — ${key}</span><span class="tw-close" onclick="document.getElementById('${winId}').remove()">X</span></div>
+    <div class="tw-body">
+      <div class="tw-icon"><svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">${e.icon}</svg></div>
+      <div class="tw-info">
+        <div class="tw-name">${e.name}</div>
+        <div class="tw-subtitle">${e.sub}</div>
+        ${statsHtml}
+        <div class="tw-divider"></div>
+        <div class="tw-lore">${e.lore}</div>
+      </div>
+    </div>
+    <div class="tw-footer"><span>PCSAI ENCYCLOPEDIA</span><span>SERIES 9</span></div>`;
+
+  // Position near click with cascade offset
+  let x = evt ? evt.clientX - winW - 10 : 200;
+  let y = evt ? evt.clientY - 30 : 100;
+  // If too far left, flip to right of click
+  if (x < 10) x = evt ? evt.clientX + 10 : 200;
+  x += encycOffset * 16;
+  y += encycOffset * 16;
+  x = Math.max(10, Math.min(x, window.innerWidth - winW - 10));
+  y = Math.max(30, Math.min(y, window.innerHeight - 200));
+  win.style.left = x + 'px';
+  win.style.top = y + 'px';
+  encycOffset = (encycOffset + 1) % 6;
+
+  document.getElementById('encyc-container').appendChild(win);
+
+  // Bring to front on click
+  win.addEventListener('mousedown', () => { encycZIndex++; win.style.zIndex = encycZIndex; });
+
+  // Draggable via title bar
+  const handle = win.querySelector('.tw-title-bar');
+  let dragging = false, ox = 0, oy = 0;
+  handle.addEventListener('mousedown', function(me) {
+    if (me.target.classList.contains('tw-close')) return;
+    dragging = true;
+    ox = me.clientX - win.offsetLeft;
+    oy = me.clientY - win.offsetTop;
+    encycZIndex++; win.style.zIndex = encycZIndex;
+    me.preventDefault();
+  });
+  document.addEventListener('mousemove', function(me) {
+    if (!dragging) return;
+    win.style.left = (me.clientX - ox) + 'px';
+    win.style.top = (me.clientY - oy) + 'px';
+  });
+  document.addEventListener('mouseup', function() { dragging = false; });
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const container = document.getElementById('encyc-container');
+    if (container.lastChild) container.lastChild.remove();
+  }
+});
+
+// Make feed terms clickable — patch addFeed to linkify known terms
+const ENCYC_KEYS = Object.keys(ENCYC);
+const origAddFeed = addFeed;
+addFeed = function(msg, cls) {
+  let linked = msg;
+  ENCYC_KEYS.forEach(k => {
+    const re = new RegExp('\\b'+k+'\\b', 'g');
+    linked = linked.replace(re, `<span style="color:var(--term-blue);cursor:pointer;text-decoration:underline;text-decoration-color:var(--term-border)" onclick="openEncyc('${k}',event)">${k}</span>`);
+  });
+  const colors = { heresy:'#D43030', system:'#3AA8C8', doctrine:'#D4A017', positive:'#2EAA4A', trade:'#C8CAD0', dim:'#6E7078' };
+  const isDot = cls!=='system' && cls!=='dim';
+  S.feedLines.unshift({ time:ts(), msg:linked, cls, color:colors[cls]||'#C8CAD0', isDot });
+  if(S.feedLines.length>60) S.feedLines.pop();
+  renderFeed();
+};
+
+// Patch renderFeed to use innerHTML for linked content
+renderFeed = function() {
+  const el = document.getElementById('feed');
+  el.innerHTML = S.feedLines.map(f =>
+    `<div class="feed-line"><span class="feed-dot" style="background:${f.isDot?f.color:'transparent'}"></span><span class="feed-time">${f.time}</span><span class="feed-msg fc-${f.cls}">${f.isDot?'':'› '}${f.msg}</span></div>`
+  ).join('');
+};
+</script>
+</body>
+</html>

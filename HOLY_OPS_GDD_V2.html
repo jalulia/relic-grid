@@ -1,0 +1,2954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOLY_OPS.EXE — Game Design Document</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   PCSAI DESIGN TOKENS
+   ============================================================ */
+:root {
+  /* Corporate Register */
+  --corp-white: #F0F0F2;
+  --corp-grey-100: #E4E4E8;
+  --corp-grey-200: #C8C8CE;
+  --corp-grey-300: #9898A0;
+  --corp-grey-400: #686870;
+  --corp-black: #18181C;
+  --corp-accent: #2A4BD7;
+  --corp-accent-muted: rgba(42, 75, 215, 0.08);
+
+  /* Terminal Register */
+  --term-bg: #0A0C10;
+  --term-surface: #12141A;
+  --term-border: #1E2028;
+  --term-text: #C8CAD0;
+  --term-text-dim: #6E7078;
+  --term-amber: #D4A017;
+  --term-green: #2EAA4A;
+  --term-red: #D43030;
+  --term-cyan: #3AA8C8;
+  --term-blue: #2A5FD7;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+  --space-7: 64px;
+  --space-8: 96px;
+
+  /* Typography */
+  --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', 'Consolas', monospace;
+
+  /* Sidebar */
+  --sidebar-width: 220px;
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--corp-white);
+  color: var(--corp-black);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+}
+
+/* ============================================================
+   HOLE-PUNCH MARGIN DOTS
+   ============================================================ */
+body::before {
+  content: '';
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 28px;
+  height: 100vh;
+  z-index: 1000;
+  background-image: radial-gradient(circle 3px at 14px 24px, var(--corp-grey-200) 3px, transparent 3px);
+  background-size: 28px 48px;
+  background-repeat: repeat-y;
+  pointer-events: none;
+}
+
+/* ============================================================
+   SIDEBAR NAVIGATION
+   ============================================================ */
+.sidebar {
+  position: fixed;
+  left: 28px;
+  top: 0;
+  width: var(--sidebar-width);
+  height: 100vh;
+  background: var(--corp-black);
+  z-index: 900;
+  overflow-y: auto;
+  padding: var(--space-6) 0 var(--space-6) 0;
+  border-right: 1px solid var(--term-border);
+}
+
+.sidebar-classification {
+  padding: 0 var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.sidebar-classification .stamp {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--corp-accent);
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
+.sidebar-classification .docnum {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--term-text-dim);
+}
+
+.sidebar-group {
+  border-top: 1px solid var(--term-border);
+  padding: var(--space-3) 0;
+}
+
+.sidebar-group-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--term-text-dim);
+  padding: 0 var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.sidebar a {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--corp-grey-300);
+  text-decoration: none;
+  padding: 5px var(--space-3);
+  line-height: 1.4;
+  transition: color 0.15s;
+}
+
+.sidebar a:hover {
+  color: #F0F0F2;
+}
+
+.sidebar a .num {
+  color: var(--term-text-dim);
+  margin-right: 6px;
+  display: inline-block;
+  min-width: 28px;
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+.main {
+  margin-left: calc(28px + var(--sidebar-width));
+  padding: var(--space-6) var(--space-7) var(--space-8) var(--space-7);
+  max-width: 860px;
+}
+
+/* ============================================================
+   COVER PAGE
+   ============================================================ */
+.cover {
+  min-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: var(--space-8);
+  position: relative;
+}
+
+.cover-wireframe {
+  position: absolute;
+  top: 10%;
+  right: -40px;
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+.cover-stamp {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--corp-accent);
+  border: 1px solid var(--corp-accent);
+  display: inline-block;
+  padding: 3px 10px;
+  margin-bottom: var(--space-6);
+}
+
+.cover-title {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--corp-black);
+  margin-bottom: var(--space-4);
+}
+
+.cover-subtitle {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--corp-grey-400);
+  margin-bottom: var(--space-7);
+}
+
+.cover-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--corp-grey-300);
+  line-height: 1.8;
+}
+
+.cover-meta span {
+  color: var(--corp-grey-400);
+}
+
+/* ============================================================
+   TABLE OF CONTENTS
+   ============================================================ */
+.toc {
+  padding: var(--space-7) 0 var(--space-8) 0;
+  max-width: 520px;
+}
+
+.toc h2 {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--corp-black);
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--corp-black);
+}
+
+.toc-entry {
+  display: flex;
+  align-items: baseline;
+  padding: 6px 0;
+}
+
+.toc-entry.sub {
+  padding-left: var(--space-4);
+}
+
+.toc-num {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--corp-black);
+  min-width: 48px;
+  flex-shrink: 0;
+}
+
+.toc-entry.sub .toc-num {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--corp-grey-400);
+  min-width: 40px;
+}
+
+.toc-title {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--corp-black);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.toc-entry.sub .toc-title {
+  font-size: 12px;
+  text-transform: none;
+  color: var(--corp-grey-400);
+}
+
+.toc-dots {
+  flex: 1;
+  margin: 0 8px;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  color: var(--corp-grey-300);
+  white-space: nowrap;
+}
+
+.toc-dots::before {
+  content: '. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .';
+}
+
+.toc-page {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--corp-grey-300);
+  flex-shrink: 0;
+  min-width: 20px;
+  text-align: right;
+}
+
+/* ============================================================
+   DITHERED SECTION DIVIDER (SVG pattern)
+   ============================================================ */
+.dither-divider {
+  width: 100%;
+  height: 10px;
+  margin: var(--space-7) 0;
+  display: block;
+}
+
+/* ============================================================
+   SECTION HEADINGS
+   ============================================================ */
+.section {
+  padding-top: var(--space-8);
+}
+
+.section-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--corp-grey-300);
+  text-transform: uppercase;
+  margin-bottom: var(--space-1);
+}
+
+h2.section-title {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--corp-black);
+  line-height: 1.3;
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--corp-black);
+  margin-bottom: var(--space-5);
+}
+
+h3 {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--corp-black);
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-3);
+}
+
+h4 {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--corp-grey-400);
+  margin-top: var(--space-5);
+  margin-bottom: var(--space-2);
+}
+
+/* ============================================================
+   BODY TEXT
+   ============================================================ */
+p {
+  margin-bottom: 1em;
+  max-width: 640px;
+}
+
+/* ============================================================
+   DATA TABLES
+   ============================================================ */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--space-4) 0 var(--space-5) 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+thead th {
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 2px solid var(--corp-black);
+  color: var(--corp-black);
+  white-space: nowrap;
+}
+
+thead th.num {
+  text-align: right;
+}
+
+tbody td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--corp-grey-200);
+  vertical-align: top;
+  color: var(--corp-black);
+}
+
+tbody td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+tbody td.dim {
+  color: var(--corp-grey-400);
+  font-size: 11px;
+}
+
+tbody tr:last-child td {
+  border-bottom: 1px solid var(--corp-grey-200);
+}
+
+/* ============================================================
+   CALLOUT BOXES
+   ============================================================ */
+.callout {
+  border-left: 3px solid var(--corp-accent);
+  background: var(--corp-accent-muted);
+  padding: var(--space-3) var(--space-4);
+  margin: var(--space-4) 0;
+  max-width: 640px;
+}
+
+.callout p {
+  margin-bottom: 0.5em;
+}
+
+.callout p:last-child {
+  margin-bottom: 0;
+}
+
+.callout-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--corp-accent);
+  margin-bottom: var(--space-2);
+}
+
+/* ============================================================
+   PULL QUOTES
+   ============================================================ */
+.pull-quote {
+  border-top: 1px solid var(--corp-grey-200);
+  border-bottom: 1px solid var(--corp-grey-200);
+  padding: var(--space-4) 0;
+  margin: var(--space-5) 0;
+  max-width: 640px;
+}
+
+.pull-quote p {
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: 18px;
+  font-style: italic;
+  color: var(--corp-grey-400);
+  letter-spacing: 0.01em;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ============================================================
+   TERMINAL EMBED BLOCKS
+   ============================================================ */
+.terminal-embed {
+  background: var(--term-bg);
+  border: 1px solid var(--term-border);
+  padding: var(--space-4);
+  margin: var(--space-5) 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--term-text);
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.terminal-embed .t-amber { color: var(--term-amber); }
+.terminal-embed .t-green { color: var(--term-green); }
+.terminal-embed .t-red { color: var(--term-red); }
+.terminal-embed .t-cyan { color: var(--term-cyan); }
+.terminal-embed .t-dim { color: var(--term-text-dim); }
+.terminal-embed .t-blue { color: var(--term-blue); }
+.terminal-embed .t-bold { font-weight: 600; }
+
+.terminal-embed .term-row {
+  white-space: pre;
+  padding: 1px 0;
+}
+
+.terminal-embed .term-header {
+  border-bottom: 1px solid var(--term-border);
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--term-text-dim);
+}
+
+/* ============================================================
+   WIREFRAME DIAGRAM
+   ============================================================ */
+.wireframe {
+  background: var(--term-bg);
+  border: 1px solid var(--term-border);
+  padding: var(--space-4);
+  margin: var(--space-5) 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--term-text-dim);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* ============================================================
+   LISTS
+   ============================================================ */
+ul, ol {
+  padding-left: var(--space-4);
+  margin-bottom: 1em;
+  max-width: 640px;
+}
+
+li {
+  margin-bottom: 0.4em;
+}
+
+/* ============================================================
+   HR
+   ============================================================ */
+hr {
+  border: none;
+  border-top: 1px solid var(--corp-grey-200);
+  margin: var(--space-6) 0;
+}
+
+/* ============================================================
+   DOCUMENT HEADER (sticky)
+   ============================================================ */
+.doc-header {
+  position: fixed;
+  top: 0;
+  left: calc(28px + var(--sidebar-width));
+  right: 0;
+  height: 36px;
+  background: var(--corp-white);
+  border-bottom: 1px solid var(--corp-grey-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-7);
+  z-index: 800;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--corp-grey-300);
+}
+
+.doc-header .accent {
+  color: var(--corp-accent);
+  font-weight: 700;
+}
+
+.main {
+  padding-top: calc(36px + var(--space-6));
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.doc-footer {
+  margin-top: var(--space-8);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--corp-grey-200);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--corp-grey-300);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* ============================================================
+   RESPONSIVE (not primary but functional)
+   ============================================================ */
+/* ============================================================
+   SVG ILLUSTRATIONS
+   ============================================================ */
+.svg-illustration {
+  margin: var(--space-5) 0;
+  max-width: 100%;
+  display: block;
+}
+
+.svg-illustration svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Dark-background illustration container */
+.illust-dark {
+  background: var(--term-bg);
+  border: 1px solid var(--term-border);
+  padding: var(--space-4);
+  margin: var(--space-5) 0;
+  overflow-x: auto;
+}
+
+/* UI Mockup blocks (rendered game elements) */
+.ui-mockup {
+  background: var(--term-bg);
+  border: 1px solid var(--term-border);
+  padding: var(--space-3);
+  margin: var(--space-4) 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--term-text);
+  max-width: 500px;
+}
+
+.ui-mockup .mock-header {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--term-text-dim);
+  border-bottom: 1px solid var(--term-border);
+  padding-bottom: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.ui-mockup .mock-row {
+  white-space: pre;
+  padding: 2px 0;
+}
+
+.ui-mockup .mock-status {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.ui-mockup .status-winning { background: var(--term-green); }
+.ui-mockup .status-outbid { background: var(--term-red); }
+.ui-mockup .status-active { background: var(--term-amber); }
+
+/* Animated panel mockups */
+.panel-mockup {
+  background: var(--term-bg);
+  border: 1px solid var(--term-border);
+  padding: 0;
+  margin: var(--space-4) 0 var(--space-5) 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--term-text);
+  overflow: hidden;
+  max-width: 640px;
+}
+
+.panel-mockup .panel-title-bar {
+  background: var(--term-surface);
+  border-bottom: 1px solid var(--term-border);
+  padding: 6px 12px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--term-text-dim);
+  display: flex;
+  justify-content: space-between;
+}
+
+.panel-mockup .panel-body {
+  padding: 12px;
+}
+
+.panel-mockup .panel-row {
+  white-space: pre;
+  padding: 2px 0;
+}
+
+.panel-mockup .panel-divider {
+  border-top: 1px solid var(--term-border);
+  margin: 8px 0;
+}
+
+/* Meter bar */
+.meter-track {
+  height: 8px;
+  background: var(--term-surface);
+  border: 1px solid var(--term-border);
+  position: relative;
+  margin: 6px 0;
+}
+
+.meter-fill {
+  height: 100%;
+  transition: width 1s ease;
+}
+
+/* Pulse animation for live indicators */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--term-green);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Scrolling ticker animation */
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-scroll {
+  display: inline-block;
+  white-space: nowrap;
+  animation: ticker-scroll 20s linear infinite;
+}
+
+/* Blink animation for warnings */
+@keyframes blink-warn {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.blink-warn {
+  animation: blink-warn 1s step-end infinite;
+}
+
+/* Sweep animation for route lines */
+@keyframes route-sweep {
+  0% { stroke-dashoffset: 200; }
+  100% { stroke-dashoffset: 0; }
+}
+
+/* Bar chart grow animation */
+@keyframes bar-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.bar-animated {
+  transform-origin: left;
+  animation: bar-grow 1.5s ease-out forwards;
+}
+
+/* Gauge needle swing */
+@keyframes needle-swing {
+  0% { transform: rotate(-60deg); }
+  30% { transform: rotate(10deg); }
+  60% { transform: rotate(-20deg); }
+  100% { transform: rotate(-5deg); }
+}
+
+/* Cross ornament */
+.cross-ornament {
+  display: block;
+  margin: var(--space-6) auto;
+  opacity: 0.15;
+}
+
+/* Expansion stamp */
+.expansion-stamp {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--term-amber);
+  border: 1px solid var(--term-amber);
+  display: inline-block;
+  padding: 3px 10px;
+  margin-bottom: var(--space-4);
+}
+
+/* Status badges for research appendices */
+.status-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: inline-block;
+  padding: 2px 8px;
+  margin-left: 12px;
+}
+.status-badge.current { color: var(--term-green); border: 1px solid var(--term-green); }
+.status-badge.outdated { color: var(--term-amber); border: 1px solid var(--term-amber); }
+.status-badge.future { color: var(--term-cyan); border: 1px solid var(--term-cyan); }
+.status-badge.core { color: var(--corp-accent); border: 1px solid var(--corp-accent); }
+
+@media (max-width: 900px) {
+  body::before { display: none; }
+  .sidebar { left: 0; width: 180px; }
+  .main { margin-left: 180px; padding: calc(36px + var(--space-4)) var(--space-4) var(--space-6) var(--space-4); }
+  .doc-header { left: 180px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     DOCUMENT HEADER (fixed)
+     ============================================================ -->
+<div class="doc-header">
+  <span><span class="accent">restricted</span> &mdash; pcsai internal</span>
+  <span>pcsai-gdd-2026-002 &mdash; rev 1.0</span>
+</div>
+
+<!-- ============================================================
+     SIDEBAR NAVIGATION
+     ============================================================ -->
+<nav class="sidebar">
+  <div class="sidebar-classification">
+    <span class="stamp">restricted</span>
+    <span class="docnum">PCSAI-GDD-2026-002</span>
+  </div>
+
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">Document</div>
+    <a href="#cover"><span class="num"></span>Cover</a>
+    <a href="#toc"><span class="num"></span>Contents</a>
+  </div>
+
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">Sections</div>
+    <a href="#s1"><span class="num">1.0</span>Executive Summary</a>
+    <a href="#s2"><span class="num">2.0</span>Core Loop</a>
+    <a href="#s3"><span class="num">3.0</span>Market System</a>
+    <a href="#s4"><span class="num">4.0</span>Asset Classification</a>
+    <a href="#s5"><span class="num">5.0</span>Market Participants</a>
+    <a href="#s6"><span class="num">6.0</span>Market Events</a>
+    <a href="#s7"><span class="num">7.0</span>Operator Interface</a>
+    <a href="#s8"><span class="num">8.0</span>Economy</a>
+    <a href="#s9"><span class="num">9.0</span>Session Structure</a>
+    <a href="#s10"><span class="num">10.0</span>Technical Architecture</a>
+  </div>
+
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">Expansion</div>
+    <a href="#s11"><span class="num">11.0</span>Expansion Concepts</a>
+  </div>
+
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">Reference</div>
+    <a href="#appendix"><span class="num"></span>Document Control</a>
+  </div>
+
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">Research</div>
+    <a href="#ra"><span class="num">A</span>Original Game Spec</a>
+    <a href="#rb"><span class="num">B</span>Brand System</a>
+    <a href="#rc"><span class="num">C</span>Relic Market Research</a>
+    <a href="#rd"><span class="num">D</span>Terminal UX Research</a>
+    <a href="#re"><span class="num">E</span>Trading Redesign</a>
+    <a href="#rf"><span class="num">F</span>Expert Roundtable</a>
+    <a href="#rg"><span class="num">G</span>Gameplay Research</a>
+    <a href="#rh"><span class="num">H</span>Futures Panel Research</a>
+    <a href="#ri"><span class="num">I</span>Trailer Brief</a>
+  </div>
+</nav>
+
+<!-- ============================================================
+     MAIN CONTENT
+     ============================================================ -->
+<div class="main">
+
+<!-- COVER PAGE -->
+<div class="cover" id="cover">
+
+  <!-- Wireframe globe ornament -->
+  <svg class="cover-wireframe" width="320" height="320" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="160" cy="160" r="140" stroke="#C8C8CE" stroke-width="0.5"/>
+    <ellipse cx="160" cy="160" rx="140" ry="50" stroke="#C8C8CE" stroke-width="0.5"/>
+    <ellipse cx="160" cy="160" rx="100" ry="140" stroke="#C8C8CE" stroke-width="0.5"/>
+    <ellipse cx="160" cy="160" rx="40" ry="140" stroke="#C8C8CE" stroke-width="0.5"/>
+    <line x1="160" y1="20" x2="160" y2="300" stroke="#C8C8CE" stroke-width="0.5"/>
+    <line x1="20" y1="160" x2="300" y2="160" stroke="#C8C8CE" stroke-width="0.5"/>
+    <ellipse cx="160" cy="160" rx="140" ry="90" stroke="#C8C8CE" stroke-width="0.5"/>
+    <ellipse cx="160" cy="160" rx="140" ry="20" stroke="#C8C8CE" stroke-width="0.5"/>
+    <ellipse cx="160" cy="120" rx="130" ry="40" stroke="#C8C8CE" stroke-width="0.5"/>
+    <ellipse cx="160" cy="200" rx="130" ry="40" stroke="#C8C8CE" stroke-width="0.5"/>
+  </svg>
+
+  <!-- Bloomberg-style keyboard panel -->
+  <div class="svg-illustration" style="margin-bottom: var(--space-6); max-width: 520px;">
+    <svg viewBox="0 0 520 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Keyboard housing -->
+      <rect x="0" y="0" width="520" height="200" fill="none" stroke="#C8C8CE" stroke-width="1"/>
+      <rect x="1" y="1" width="518" height="198" fill="#F0F0F2" stroke="none"/>
+      <!-- Function key row -->
+      <rect x="12" y="12" width="50" height="24" fill="none" stroke="#D43030" stroke-width="1"/>
+      <text x="37" y="28" font-family="'IBM Plex Mono',monospace" font-size="7" font-weight="600" fill="#D43030" text-anchor="middle">CANCEL</text>
+      <rect x="68" y="12" width="50" height="24" fill="none" stroke="#2A4BD7" stroke-width="1"/>
+      <text x="93" y="22" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#686870" text-anchor="middle">F1</text>
+      <text x="93" y="31" font-family="'IBM Plex Mono',monospace" font-size="7" font-weight="600" fill="#2A4BD7" text-anchor="middle">BUY</text>
+      <rect x="124" y="12" width="50" height="24" fill="none" stroke="#2A4BD7" stroke-width="1"/>
+      <text x="149" y="22" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#686870" text-anchor="middle">F2</text>
+      <text x="149" y="31" font-family="'IBM Plex Mono',monospace" font-size="7" font-weight="600" fill="#2A4BD7" text-anchor="middle">SELL</text>
+      <rect x="180" y="12" width="50" height="24" fill="none" stroke="#C8C8CE" stroke-width="1"/>
+      <text x="205" y="22" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#686870" text-anchor="middle">F3</text>
+      <text x="205" y="31" font-family="'IBM Plex Mono',monospace" font-size="7" font-weight="600" fill="#18181C" text-anchor="middle">PORT</text>
+      <rect x="236" y="12" width="50" height="24" fill="none" stroke="#D4A017" stroke-width="1"/>
+      <text x="261" y="22" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#686870" text-anchor="middle">F4</text>
+      <text x="261" y="31" font-family="'IBM Plex Mono',monospace" font-size="7" font-weight="600" fill="#D4A017" text-anchor="middle">ENSHRINE</text>
+      <rect x="292" y="12" width="50" height="24" fill="none" stroke="#C8C8CE" stroke-width="1"/>
+      <text x="317" y="28" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#9898A0" text-anchor="middle">F5</text>
+      <rect x="348" y="12" width="50" height="24" fill="none" stroke="#C8C8CE" stroke-width="1"/>
+      <text x="373" y="28" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#9898A0" text-anchor="middle">F6</text>
+      <!-- GO key -->
+      <rect x="456" y="12" width="52" height="24" fill="#2EAA4A" stroke="none"/>
+      <text x="482" y="28" font-family="'IBM Plex Mono',monospace" font-size="8" font-weight="700" fill="#0A0C10" text-anchor="middle">GO</text>
+      <!-- QWERTY rows -->
+      <g transform="translate(12, 46)">
+        <!-- Row 1 -->
+        <rect x="0" y="0" width="28" height="22" fill="none" stroke="#C8C8CE" stroke-width="0.5"/>
+        <text x="14" y="14" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#18181C" text-anchor="middle">Q</text>
+        <rect x="32" y="0" width="28" height="22" fill="none" stroke="#C8C8CE" stroke-width="0.5"/>
+        <text x="46" y="14" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#18181C" text-anchor="middle">W</text>
+        <rect x="64" y="0" width="28" height="22" fill="none" stroke="#C8C8CE" stroke-width="0.5"/>
+        <text x="78" y="14" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#18181C" text-anchor="middle">E</text>
+        <rect x="96" y="0" width="28" height="22" fill="none" stroke="#C8C8CE" stroke-width="0.5"/>
+        <text x="110" y="14" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#18181C" text-anchor="middle">R</text>
+        <rect x="128" y="0" width="28" height="22" fill="none" stroke="#C8C8CE" stroke-width="0.5"/>
+        <text x="142" y="14" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#18181C" text-anchor="middle">T</text>
+        <rect x="160" y="0" width="28" height="22" fill="none" stroke="#C8C8CE" stroke-width="0.5"/>
+        <text x="174" y="14" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#18181C" text-anchor="middle">Y</text>
+        <rect x="192" y="0" width="28" height="22" fill="none" stroke="#C8C8CE" stroke-width="0.5"/>
+        <text x="206" y="14" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#18181C" text-anchor="middle">U</text>
+        <rect x="224" y="0" width="28" height="22" fill="none" stroke="#C8C8CE" stroke-width="0.5"/>
+        <text x="238" y="14" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#18181C" text-anchor="middle">I</text>
+        <rect x="256" y="0" width="28" height="22" fill="none" stroke="#C8C8CE" stroke-width="0.5"/>
+        <text x="270" y="14" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#18181C" text-anchor="middle">O</text>
+        <rect x="288" y="0" width="28" height="22" fill="none" stroke="#C8C8CE" stroke-width="0.5"/>
+        <text x="302" y="14" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#18181C" text-anchor="middle">P</text>
+      </g>
+      <!-- Numeric keys (trading) -->
+      <g transform="translate(12, 100)">
+        <rect x="0" y="0" width="28" height="22" fill="none" stroke="#D4A017" stroke-width="0.5"/>
+        <text x="14" y="14" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#D4A017" text-anchor="middle">1</text>
+        <rect x="32" y="0" width="28" height="22" fill="none" stroke="#D4A017" stroke-width="0.5"/>
+        <text x="46" y="14" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#D4A017" text-anchor="middle">2</text>
+        <rect x="64" y="0" width="28" height="22" fill="none" stroke="#D4A017" stroke-width="0.5"/>
+        <text x="78" y="14" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#D4A017" text-anchor="middle">4</text>
+        <rect x="96" y="0" width="28" height="22" fill="none" stroke="#D4A017" stroke-width="0.5"/>
+        <text x="110" y="14" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#D4A017" text-anchor="middle">8</text>
+        <rect x="128" y="0" width="28" height="22" fill="none" stroke="#D4A017" stroke-width="0.5"/>
+        <text x="142" y="14" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#D4A017" text-anchor="middle">32</text>
+        <rect x="160" y="0" width="28" height="22" fill="none" stroke="#D4A017" stroke-width="0.5"/>
+        <text x="174" y="14" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#D4A017" text-anchor="middle">64</text>
+        <!-- Labels -->
+        <text x="0" y="36" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#9898A0"># [/N] FOR FRACTIONS</text>
+        <text x="0" y="44" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#686870">i.e. 1/2 FOR 379</text>
+      </g>
+      <!-- Right side: quote/report keys -->
+      <g transform="translate(380, 46)">
+        <rect x="0" y="0" width="56" height="22" fill="none" stroke="#2EAA4A" stroke-width="1"/>
+        <text x="28" y="10" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#686870" text-anchor="middle">RELIC</text>
+        <text x="28" y="18" font-family="'IBM Plex Mono',monospace" font-size="6" font-weight="600" fill="#2EAA4A" text-anchor="middle">QUOTE 1</text>
+        <rect x="60" y="0" width="56" height="22" fill="none" stroke="#2EAA4A" stroke-width="1"/>
+        <text x="88" y="10" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#686870" text-anchor="middle">SAINT</text>
+        <text x="88" y="18" font-family="'IBM Plex Mono',monospace" font-size="6" font-weight="600" fill="#2EAA4A" text-anchor="middle">QUOTE 2</text>
+      </g>
+      <!-- Trackball -->
+      <circle cx="440" cy="150" r="28" fill="none" stroke="#C8C8CE" stroke-width="1"/>
+      <circle cx="440" cy="150" r="20" fill="none" stroke="#C8C8CE" stroke-width="0.5"/>
+      <circle cx="440" cy="150" r="2" fill="#C8C8CE"/>
+      <text x="440" y="186" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#9898A0" text-anchor="middle">CURSOR CONTROL</text>
+      <!-- Brand label -->
+      <text x="380" y="126" font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="700" fill="#18181C">Holy_Ops</text>
+      <text x="380" y="136" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#9898A0">SERIES 9 WORKSTATION</text>
+    </svg>
+  </div>
+
+  <div class="cover-stamp">restricted</div>
+  <h1 class="cover-title">Holy_Ops.exe</h1>
+  <div class="cover-subtitle">Game Design Document &mdash; Relic Exchange Terminal</div>
+  <div class="cover-meta">
+    <span>Document:</span> PCSAI-GDD-2026-002<br>
+    <span>Classification:</span> RESTRICTED<br>
+    <span>Date:</span> 2026.03.21<br>
+    <span>Revision:</span> 1.0<br>
+    <span>Prepared by:</span> Pontifical Commission on Sacred Asset Infrastructure<br>
+    <span>Distribution:</span> Authorized operators only
+  </div>
+</div>
+
+<!-- DITHER DIVIDER -->
+<svg class="dither-divider" viewBox="0 0 800 10" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="dither1" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="2" height="2" fill="#18181C"/>
+      <rect x="2" y="2" width="2" height="2" fill="#18181C"/>
+    </pattern>
+    <linearGradient id="ditherfade1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="white" stop-opacity="1"/>
+      <stop offset="20%" stop-color="white" stop-opacity="0"/>
+      <stop offset="80%" stop-color="white" stop-opacity="0"/>
+      <stop offset="100%" stop-color="white" stop-opacity="1"/>
+    </linearGradient>
+    <mask id="dithermask1"><rect width="800" height="10" fill="url(#ditherfade1)"/></mask>
+  </defs>
+  <rect width="800" height="10" fill="url(#dither1)" mask="url(#dithermask1)" opacity="0.3"/>
+</svg>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc" id="toc">
+  <h2>Contents</h2>
+
+  <div class="toc-entry"><span class="toc-num">1.0</span><a class="toc-title" href="#s1">Executive Summary</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">2.0</span><a class="toc-title" href="#s2">Core Loop</a><span class="toc-dots"></span></div>
+  <div class="toc-entry sub"><span class="toc-num">2.1</span><a class="toc-title" href="#s2">Briefing Phase</a><span class="toc-dots"></span></div>
+  <div class="toc-entry sub"><span class="toc-num">2.2</span><a class="toc-title" href="#s2">Open Market</a><span class="toc-dots"></span></div>
+  <div class="toc-entry sub"><span class="toc-num">2.3</span><a class="toc-title" href="#s2">Settlement</a><span class="toc-dots"></span></div>
+  <div class="toc-entry sub"><span class="toc-num">2.4</span><a class="toc-title" href="#s2">The Enshrine Decision</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">3.0</span><a class="toc-title" href="#s3">Market System</a><span class="toc-dots"></span></div>
+  <div class="toc-entry sub"><span class="toc-num">3.1</span><a class="toc-title" href="#s3">Price Discovery Model</a><span class="toc-dots"></span></div>
+  <div class="toc-entry sub"><span class="toc-num">3.2</span><a class="toc-title" href="#s3">Price Factors</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">4.0</span><a class="toc-title" href="#s4">Asset Classification</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">5.0</span><a class="toc-title" href="#s5">Market Participants</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">6.0</span><a class="toc-title" href="#s6">Market Events</a><span class="toc-dots"></span></div>
+  <div class="toc-entry sub"><span class="toc-num">6.1</span><a class="toc-title" href="#s6">Heresy System</a><span class="toc-dots"></span></div>
+  <div class="toc-entry sub"><span class="toc-num">6.2</span><a class="toc-title" href="#s6">Macro Events</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">7.0</span><a class="toc-title" href="#s7">Operator Interface</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">8.0</span><a class="toc-title" href="#s8">Economy</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">9.0</span><a class="toc-title" href="#s9">Session Structure</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">10.0</span><a class="toc-title" href="#s10">Technical Architecture</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">11.0</span><a class="toc-title" href="#s11">Expansion Concepts</a><span class="toc-dots"></span></div>
+  <div class="toc-entry sub"><span class="toc-num">11.1</span><a class="toc-title" href="#s11">Souls Futures Market</a><span class="toc-dots"></span></div>
+  <div class="toc-entry sub"><span class="toc-num">11.2</span><a class="toc-title" href="#s11">Doctrine Deployment</a><span class="toc-dots"></span></div>
+  <div class="toc-entry sub"><span class="toc-num">11.3</span><a class="toc-title" href="#s11">Currency Exchange / Obol Markets</a><span class="toc-dots"></span></div>
+  <div class="toc-entry sub"><span class="toc-num">11.4</span><a class="toc-title" href="#s11">Indulgence Index</a><span class="toc-dots"></span></div>
+  <div class="toc-entry sub"><span class="toc-num">11.5</span><a class="toc-title" href="#s11">Pilgrimage Route Intelligence</a><span class="toc-dots"></span></div>
+  <div class="toc-entry sub"><span class="toc-num">11.6</span><a class="toc-title" href="#s11">Schism Risk Index</a><span class="toc-dots"></span></div>
+
+  <div class="toc-entry"><span class="toc-num">A</span><a class="toc-title" href="#ra">Original Game Specification</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">B</span><a class="toc-title" href="#rb">Brand System</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">C</span><a class="toc-title" href="#rc">Relic Market Research</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">D</span><a class="toc-title" href="#rd">Trading Terminal Research</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">E</span><a class="toc-title" href="#re">Trading Redesign</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">F</span><a class="toc-title" href="#rf">Expert Roundtable Synthesis</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">G</span><a class="toc-title" href="#rg">Gameplay Research</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">H</span><a class="toc-title" href="#rh">Futures Panel Research</a><span class="toc-dots"></span></div>
+  <div class="toc-entry"><span class="toc-num">I</span><a class="toc-title" href="#ri">Trailer Creative Brief</a><span class="toc-dots"></span></div>
+</div>
+
+<!-- ============================================================
+     SECTION 1.0 — EXECUTIVE SUMMARY
+     ============================================================ -->
+<svg class="dither-divider" viewBox="0 0 800 10" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="dither2" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="2" height="2" fill="#18181C"/>
+      <rect x="4" y="2" width="2" height="2" fill="#18181C"/>
+      <rect x="2" y="4" width="2" height="2" fill="#18181C"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="10" fill="url(#dither2)" opacity="0.25"/>
+</svg>
+
+<div class="section" id="s1">
+  <div class="section-num">Section 1.0</div>
+  <h2 class="section-title">Executive Summary</h2>
+
+  <p>HOLY_OPS.EXE is a single-player trading game disguised as a medieval relic auction. The operator runs a clandestine relic exchange terminal, buying sacred bones and teeth at auction, holding them as the market fluctuates, and selling them for profit while attempting to complete saint collections before time runs out.</p>
+
+  <p>The game occupies a unique intersection: Bloomberg Terminal meets Canterbury Tales. It is an information-dense, aesthetically precise experience about reading a market, exploiting edges, and deciding when a relic is worth more as capital and when it is worth more as devotion.</p>
+
+  <div class="pull-quote">
+    <p>The tension between trading and collecting, between profit and devotion, is the game.</p>
+  </div>
+
+  <h3>Design Pillars</h3>
+
+  <p>Three principles govern the design. First, the terminal aesthetic is not a skin. It is the gameplay surface. The BSP grid is a living heat map where lot size reflects market activity, the scrolling feed is a skill-gated intelligence stream, and the portfolio view creates the emotional texture of real trading. Second, the medieval relic setting provides something no financial theme can: emotional attachment. A treasury bond is a number; the transverberated heart of St. Teresa is a story. Third, the heresy system creates learnable patterns that reward deep engagement. The operator who has internalized that Cathari events depress Catherine and Teresa prices, who reads the terminal feed for early signals, who watches rival collectors for positioning data, is not clicking buttons. They are reading a market.</p>
+
+  <div class="callout">
+    <div class="callout-label">Genre Classification</div>
+    <p>Real-time strategy / auction simulator / portfolio management. Single-player. Session-based (15-25 minutes). Web platform (browser-native).</p>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 2.0 — CORE LOOP
+     ============================================================ -->
+<svg class="dither-divider" viewBox="0 0 800 10" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="dither3" x="0" y="0" width="8" height="4" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="2" height="2" fill="#18181C"/>
+      <rect x="4" y="0" width="2" height="2" fill="#18181C"/>
+      <rect x="2" y="2" width="2" height="2" fill="#18181C"/>
+      <rect x="6" y="2" width="2" height="2" fill="#18181C"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="10" fill="url(#dither3)" opacity="0.2"/>
+</svg>
+
+<div class="section" id="s2">
+  <div class="section-num">Section 2.0</div>
+  <h2 class="section-title">Core Loop</h2>
+
+  <p>Each session is structured as a series of Market Days. The day follows a four-phase cycle that creates a rhythm of tension and relief, chaos and contemplation.</p>
+
+  <div class="terminal-embed">
+    <div class="term-header">Market Day Cycle</div>
+    <div class="term-row"><span class="t-cyan">BRIEFING</span>    <span class="t-dim">15s</span>   Scan feed for signals. Form a plan.</div>
+    <div class="term-row"><span class="t-amber">OPEN MARKET</span> <span class="t-dim">3m</span>    Real-time auctions. Buy, sell, hold.</div>
+    <div class="term-row"><span class="t-red">CLOSING BELL</span> <span class="t-dim">30s</span>   Final scramble. Lots expire rapidly.</div>
+    <div class="term-row"><span class="t-green">SETTLEMENT</span>  <span class="t-dim">--</span>    Review. Enshrine. Plan tomorrow.</div>
+  </div>
+
+  <!-- Market Day HUD Timeline -->
+  <div class="illust-dark">
+    <svg viewBox="0 0 700 90" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;max-width:100%;">
+      <!-- Timeline base -->
+      <line x1="40" y1="45" x2="660" y2="45" stroke="#1E2028" stroke-width="1"/>
+      <!-- BRIEFING phase -->
+      <rect x="40" y="32" width="80" height="26" fill="none" stroke="#3AA8C8" stroke-width="1"/>
+      <rect x="40" y="32" width="80" height="26" fill="#3AA8C8" fill-opacity="0.08"/>
+      <text x="80" y="42" font-family="'IBM Plex Mono',monospace" font-size="7" font-weight="600" fill="#3AA8C8" text-anchor="middle" letter-spacing="0.08em">BRIEFING</text>
+      <text x="80" y="52" font-family="'IBM Plex Mono',monospace" font-size="8" font-weight="600" fill="#C8CAD0" text-anchor="middle">15s</text>
+      <!-- Connector dot -->
+      <circle cx="130" cy="45" r="3" fill="#3AA8C8"/>
+      <!-- OPEN MARKET phase -->
+      <rect x="140" y="32" width="280" height="26" fill="none" stroke="#D4A017" stroke-width="1"/>
+      <rect x="140" y="32" width="280" height="26" fill="#D4A017" fill-opacity="0.08"/>
+      <text x="280" y="42" font-family="'IBM Plex Mono',monospace" font-size="7" font-weight="600" fill="#D4A017" text-anchor="middle" letter-spacing="0.08em">OPEN MARKET</text>
+      <text x="280" y="52" font-family="'IBM Plex Mono',monospace" font-size="8" font-weight="600" fill="#C8CAD0" text-anchor="middle">3:00</text>
+      <!-- Tick marks inside market phase -->
+      <line x1="210" y1="58" x2="210" y2="62" stroke="#6E7078" stroke-width="0.5"/>
+      <line x1="280" y1="58" x2="280" y2="62" stroke="#6E7078" stroke-width="0.5"/>
+      <line x1="350" y1="58" x2="350" y2="62" stroke="#6E7078" stroke-width="0.5"/>
+      <!-- Connector dot -->
+      <circle cx="430" cy="45" r="3" fill="#D4A017"/>
+      <!-- CLOSING BELL -->
+      <rect x="440" y="32" width="80" height="26" fill="none" stroke="#D43030" stroke-width="1"/>
+      <rect x="440" y="32" width="80" height="26" fill="#D43030" fill-opacity="0.08"/>
+      <text x="480" y="42" font-family="'IBM Plex Mono',monospace" font-size="7" font-weight="600" fill="#D43030" text-anchor="middle" letter-spacing="0.08em">CLOSING</text>
+      <text x="480" y="52" font-family="'IBM Plex Mono',monospace" font-size="8" font-weight="600" fill="#C8CAD0" text-anchor="middle">30s</text>
+      <!-- Connector dot -->
+      <circle cx="530" cy="45" r="3" fill="#D43030"/>
+      <!-- SETTLEMENT -->
+      <rect x="540" y="32" width="120" height="26" fill="none" stroke="#2EAA4A" stroke-width="1"/>
+      <rect x="540" y="32" width="120" height="26" fill="#2EAA4A" fill-opacity="0.08"/>
+      <text x="600" y="42" font-family="'IBM Plex Mono',monospace" font-size="7" font-weight="600" fill="#2EAA4A" text-anchor="middle" letter-spacing="0.08em">SETTLEMENT</text>
+      <text x="600" y="52" font-family="'IBM Plex Mono',monospace" font-size="8" font-weight="600" fill="#C8CAD0" text-anchor="middle">untimed</text>
+      <!-- Top labels -->
+      <text x="40" y="20" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078" letter-spacing="0.06em">SCAN</text>
+      <text x="140" y="20" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078" letter-spacing="0.06em">TRADE</text>
+      <text x="440" y="20" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078" letter-spacing="0.06em">SCRAMBLE</text>
+      <text x="540" y="20" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078" letter-spacing="0.06em">REVIEW + ENSHRINE</text>
+      <!-- Bottom timing bar -->
+      <text x="40" y="80" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#6E7078">0:00</text>
+      <text x="280" y="80" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#6E7078" text-anchor="middle">~1:45</text>
+      <text x="480" y="80" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#6E7078" text-anchor="middle">~3:15</text>
+      <text x="660" y="80" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#6E7078" text-anchor="end">~3:45 + deliberation</text>
+    </svg>
+  </div>
+
+  <h3>2.1 Briefing Phase</h3>
+  <p>Fifteen seconds. The terminal feed populates with tomorrow's intelligence: demand signals, heresy warnings, rival collector movements, lot previews. The operator scans for actionable patterns. This is not a pause — it is the moment before the doors open. The pre-sale viewing. It is where the excitement begins.</p>
+
+  <h3>2.2 Open Market</h3>
+  <p>Three minutes of live trading. Lots spawn continuously on the BSP grid. AI bidders compete in real time. Prices fluctuate. Heresy events fire and disrupt the market, creating four-second tribunal delays where AI bidding freezes and the operator can bid unopposed. The operator buys relics at auction when they are underpriced and sells them on the open market when they are overpriced.</p>
+
+  <h3>2.3 Closing Bell and Settlement</h3>
+  <p>A thirty-second closing bell accelerates the final lot expirations. Then the market closes and settlement begins. Settlement is untimed. The operator sees a market summary: what prices moved, which AI collectors acquired what, what the forecast projects. Then the enshrine decision.</p>
+
+  <h3>2.4 The Enshrine Decision</h3>
+  <p>Enshrining permanently locks a relic into the saint collection. It cannot be traded, sold, or recovered. Every enshrine reduces liquid capital and trading capacity. But it advances the saint completion that determines the final score. The tension is irreversible: every relic in the portfolio is simultaneously an investment and a potential piece of a sacred collection. Sell it for profit, or enshrine it for progress.</p>
+
+  <div class="callout">
+    <div class="callout-label">Design Intent</div>
+    <p>The enshrine animation should evoke placement in a reliquary. The relic moves from a trading card to a sacred object. The visual register shifts from commerce to devotion. The sound is stone sliding into place. This moment is what all the trading was for.</p>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 3.0 — MARKET SYSTEM
+     ============================================================ -->
+<svg class="dither-divider" viewBox="0 0 800 10" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="10" fill="url(#dither1)" opacity="0.25"/>
+</svg>
+
+<div class="section" id="s3">
+  <div class="section-num">Section 3.0</div>
+  <h2 class="section-title">Market System</h2>
+
+  <h3>3.1 Price Discovery Model</h3>
+  <p>Relic prices follow an Ornstein-Uhlenbeck mean-reverting process. Each relic has an equilibrium price (mu) determined by its intrinsic attributes. Prices drift toward this equilibrium over time but are subject to random fluctuations (sigma) and event-driven shocks. The model updates every five seconds.</p>
+
+  <p>The mean-reversion creates a fundamental truth: prices that are far from equilibrium tend to correct. This is the edge that rewards patient, informed operators. A relic trading 30% below its equilibrium after a heresy event is a buying opportunity. A relic trading 40% above its equilibrium due to a demand surge is a selling opportunity.</p>
+
+  <h3>3.2 Price Factors</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Factor</th>
+        <th>Effect</th>
+        <th class="num">Magnitude</th>
+        <th>Duration</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Relic class</td>
+        <td>Base equilibrium price tier</td>
+        <td class="num">I: 200-600, II: 80-200, III: 20-80</td>
+        <td>Permanent</td>
+      </tr>
+      <tr>
+        <td>Saint fame</td>
+        <td>Multiplier on base price</td>
+        <td class="num">0.8x - 1.4x</td>
+        <td>Permanent</td>
+      </tr>
+      <tr>
+        <td>Body part rank</td>
+        <td>Signature relics command premium</td>
+        <td class="num">1.0x - 3.0x</td>
+        <td>Permanent</td>
+      </tr>
+      <tr>
+        <td>Provenance quality</td>
+        <td>Historical chain depth adds value</td>
+        <td class="num">+10% to +40%</td>
+        <td>Permanent</td>
+      </tr>
+      <tr>
+        <td>Heresy event</td>
+        <td>Sect-specific saint price movement</td>
+        <td class="num">-25% to +30%</td>
+        <td>60-120s decay</td>
+      </tr>
+      <tr>
+        <td>Demand surge</td>
+        <td>Papal decree or pilgrimage wave</td>
+        <td class="num">+15% to +35%</td>
+        <td>90-180s decay</td>
+      </tr>
+      <tr>
+        <td>Supply shock</td>
+        <td>Crusade haul or monastery dissolution</td>
+        <td class="num">-20% to -40%</td>
+        <td>120-240s decay</td>
+      </tr>
+      <tr>
+        <td>Completion premium</td>
+        <td>Price spike as saint nears completion</td>
+        <td class="num">1.5x at 75%, 3x at 90%, 6x at 95%</td>
+        <td>Persistent</td>
+      </tr>
+      <tr>
+        <td>Provenance decay</td>
+        <td>Held relics depreciate over time</td>
+        <td class="num">-1.5%/minute, floor 70%</td>
+        <td>Continuous</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- O-U Price Behavior Chart (Postbank Girotel bitmap style) -->
+  <div class="illust-dark">
+    <svg viewBox="0 0 700 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;max-width:100%;">
+      <!-- Y-axis -->
+      <line x1="50" y1="20" x2="50" y2="180" stroke="#1E2028" stroke-width="1"/>
+      <!-- X-axis -->
+      <line x1="50" y1="180" x2="670" y2="180" stroke="#1E2028" stroke-width="1"/>
+      <!-- Mean line (mu) -->
+      <line x1="50" y1="100" x2="670" y2="100" stroke="#3AA8C8" stroke-width="0.5" stroke-dasharray="4 4"/>
+      <text x="675" y="103" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#3AA8C8">μ</text>
+      <!-- Sigma bands -->
+      <line x1="50" y1="60" x2="670" y2="60" stroke="#6E7078" stroke-width="0.5" stroke-dasharray="2 6"/>
+      <text x="675" y="63" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#6E7078">+σ</text>
+      <line x1="50" y1="140" x2="670" y2="140" stroke="#6E7078" stroke-width="0.5" stroke-dasharray="2 6"/>
+      <text x="675" y="143" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#6E7078">-σ</text>
+      <!-- Price path (stepped/pixelated for bitmap feel) -->
+      <polyline points="50,95 70,98 90,92 110,88 130,75 150,72 170,78 190,85 210,95 230,102 250,110 270,125 290,138 310,142 330,135 350,120 370,108 390,100 410,95 430,88 450,82 470,78 490,85 510,92 530,98 550,105 570,112 590,108 610,98 630,90 650,85 670,88" fill="none" stroke="#D4A017" stroke-width="1.5" stroke-linejoin="bevel"/>
+      <!-- Heresy event markers -->
+      <line x1="270" y1="20" x2="270" y2="180" stroke="#D43030" stroke-width="0.5" stroke-dasharray="3 3"/>
+      <text x="272" y="28" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#D43030">CATHARI</text>
+      <line x1="450" y1="20" x2="450" y2="180" stroke="#D43030" stroke-width="0.5" stroke-dasharray="3 3"/>
+      <text x="452" y="28" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#D43030">FLAGELLANT</text>
+      <!-- BUY annotation -->
+      <circle cx="310" cy="142" r="4" fill="none" stroke="#2EAA4A" stroke-width="1"/>
+      <text x="318" y="145" font-family="'IBM Plex Mono',monospace" font-size="7" font-weight="600" fill="#2EAA4A">BUY</text>
+      <!-- SELL annotation -->
+      <circle cx="470" cy="78" r="4" fill="none" stroke="#D43030" stroke-width="1"/>
+      <text x="478" y="81" font-family="'IBM Plex Mono',monospace" font-size="7" font-weight="600" fill="#D43030">SELL</text>
+      <!-- Y-axis labels -->
+      <text x="45" y="63" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078" text-anchor="end">460</text>
+      <text x="45" y="103" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078" text-anchor="end">340</text>
+      <text x="45" y="143" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078" text-anchor="end">220</text>
+      <!-- X-axis labels -->
+      <text x="50" y="194" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078">T=0</text>
+      <text x="360" y="194" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078" text-anchor="middle">T=3min</text>
+      <text x="670" y="194" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078" text-anchor="end">T=6min</text>
+      <!-- Legend -->
+      <line x1="55" y1="12" x2="75" y2="12" stroke="#D4A017" stroke-width="1.5"/>
+      <text x="80" y="15" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#C8CAD0">PRICE</text>
+      <line x1="130" y1="12" x2="150" y2="12" stroke="#3AA8C8" stroke-width="0.5" stroke-dasharray="4 4"/>
+      <text x="155" y="15" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#C8CAD0">EQUILIBRIUM</text>
+      <line x1="230" y1="12" x2="250" y2="12" stroke="#D43030" stroke-width="0.5" stroke-dasharray="3 3"/>
+      <text x="255" y="15" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#C8CAD0">HERESY EVENT</text>
+    </svg>
+  </div>
+
+  <div class="callout">
+    <div class="callout-label">Transparency Principle</div>
+    <p>Every price movement must have a visible cause in the terminal feed. The operator should never feel cheated by an opaque formula. When the Ornstein-Uhlenbeck model causes a price to spike, the feed explains it through provenance narrative or market event.</p>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 4.0 — ASSET CLASSIFICATION
+     ============================================================ -->
+<svg class="dither-divider" viewBox="0 0 800 10" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="dither4" x="0" y="0" width="4" height="8" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="2" height="2" fill="#18181C"/>
+      <rect x="2" y="4" width="2" height="2" fill="#18181C"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="10" fill="url(#dither4)" opacity="0.2"/>
+</svg>
+
+<div class="section" id="s4">
+  <div class="section-num">Section 4.0</div>
+  <h2 class="section-title">Asset Classification</h2>
+
+  <p>The exchange trades relics of eight saints, each functioning as a distinct asset class with unique supply characteristics, price behavior, and strategic profile. Three relic classes determine base value tiers.</p>
+
+  <h3>Relic Classes</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Class</th>
+        <th>Category</th>
+        <th>Examples</th>
+        <th class="num">Value Range</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>I</td>
+        <td>Body Part</td>
+        <td>Bones, teeth, hair, blood, organs</td>
+        <td class="num">200 - 600</td>
+      </tr>
+      <tr>
+        <td>II</td>
+        <td>Possession</td>
+        <td>Veils, tunics, cloths, instruments</td>
+        <td class="num">80 - 200</td>
+      </tr>
+      <tr>
+        <td>III</td>
+        <td>Touched Object</td>
+        <td>Dust, ash, ampullae, contact cloths</td>
+        <td class="num">20 - 80</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>The Eight Saints</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Saint</th>
+        <th class="num">Relics</th>
+        <th>Provenance</th>
+        <th>Strategic Profile</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>AMBROSE</td>
+        <td class="num">12</td>
+        <td>Basilica di Sant'Ambrogio, Milan</td>
+        <td class="dim">High supply. Many Class I body parts. Mid-tier cost. Wide price spread between signature and minor relics.</td>
+      </tr>
+      <tr>
+        <td>LUCIA</td>
+        <td class="num">10</td>
+        <td>Church of SS. Geremia e Lucia, Venice</td>
+        <td class="dim">Moderate supply. Eyes are high-value signature relics. Venetian provenance adds premium.</td>
+      </tr>
+      <tr>
+        <td>SEBASTIAN</td>
+        <td class="num">12</td>
+        <td>Basilica di San Sebastiano, Rome</td>
+        <td class="dim">High supply. Arrow-related relics carry narrative premium. Flagellant heresy target.</td>
+      </tr>
+      <tr>
+        <td>TERESA</td>
+        <td class="num">8</td>
+        <td>Convento de Santa Teresa, Avila</td>
+        <td class="dim">Lowest supply. Transverberated heart is the most expensive single relic. Fastest to complete but most per-relic cost.</td>
+      </tr>
+      <tr>
+        <td>BARTHOLOMEW</td>
+        <td class="num">11</td>
+        <td>Basilica di San Bartolomeo, Rome</td>
+        <td class="dim">Moderate supply. Flayed skin relics are distinctive. Stable mid-range pricing.</td>
+      </tr>
+      <tr>
+        <td>AGATHA</td>
+        <td class="num">9</td>
+        <td>Cathedral of Sant'Agata, Catania</td>
+        <td class="dim">Low supply. Second-fastest completion. Sicilian provenance. Moderate volatility.</td>
+      </tr>
+      <tr>
+        <td>FRANCIS</td>
+        <td class="num">13</td>
+        <td>Basilica di San Francesco, Assisi</td>
+        <td class="dim">Highest supply. Stigmata relics command extreme premium. Most expensive to complete. Flagellant heresy affects pricing.</td>
+      </tr>
+      <tr>
+        <td>CATHERINE</td>
+        <td class="num">10</td>
+        <td>Basilica di San Domenico, Siena</td>
+        <td class="dim">Moderate supply. Cathari heresy specifically depresses Catherine prices. Head relic is signature piece.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="pull-quote">
+    <p>The smart collector buys the trophy piece first, when nobody knows they are building the set. Then they quietly acquire the minor pieces.</p>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 5.0 — MARKET PARTICIPANTS
+     ============================================================ -->
+<svg class="dither-divider" viewBox="0 0 800 10" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="10" fill="url(#dither2)" opacity="0.2"/>
+</svg>
+
+<div class="section" id="s5">
+  <div class="section-num">Section 5.0</div>
+  <h2 class="section-title">Market Participants</h2>
+
+  <p>AI market participants have distinct behavioral personalities that the operator can learn to read and exploit. Each archetype creates a different kind of market pressure and trading opportunity. Participants are surfaced in the terminal feed, making their behavior observable intelligence.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Archetype</th>
+        <th>Behavior</th>
+        <th>Operator Strategy</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Devotee</td>
+        <td>Pursues a specific saint relentlessly. Overbids on target relics, ignores others. Emotional, not rational.</td>
+        <td class="dim">Avoid competing on their target saint. Sell to them at premium when they are near completion.</td>
+      </tr>
+      <tr>
+        <td>Speculator</td>
+        <td>Competes with the operator on timing. Buys underpriced relics, sells at peak. Adaptive delay shrinks as operator succeeds.</td>
+        <td class="dim">Speed is the edge. Act on feed intelligence before the Speculator reacts. Front-run heresy events.</td>
+      </tr>
+      <tr>
+        <td>Hoarder</td>
+        <td>Accumulates relics of one type. Reduces supply. Drives completion premium for targeted saint.</td>
+        <td class="dim">Monitor their holdings via feed. If they are hoarding your target saint, pivot strategy or buy early.</td>
+      </tr>
+      <tr>
+        <td>Liquidator</td>
+        <td>Periodically dumps portfolio holdings at below-market prices. Creates buying opportunities.</td>
+        <td class="dim">Watch for liquidation events in the feed. Snap up underpriced relics during fire sales.</td>
+      </tr>
+      <tr>
+        <td>Authenticator</td>
+        <td>Periodically verifies or denounces relics, shifting their value by 20-40%.</td>
+        <td class="dim">Authentication events are market signals. Buy before positive authentication, sell before risk of denouncement.</td>
+      </tr>
+      <tr>
+        <td>Cartel</td>
+        <td>Coordinates with other AI bidders to inflate specific saint prices. Creates artificial bubbles.</td>
+        <td class="dim">Identify cartel-inflated prices and avoid. Wait for the bubble to burst, then buy the correction.</td>
+      </tr>
+      <tr>
+        <td>Pilgrim</td>
+        <td>Enters late in market days. Bids aggressively on expiring lots. Drives closing-bell price spikes.</td>
+        <td class="dim">Place bids before the Pilgrim arrives. Sell during the closing bell when Pilgrim demand peaks.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Rendered feed snippet -->
+  <div class="ui-mockup" style="max-width:640px;">
+    <div class="mock-header">TERMINAL FEED — LIVE</div>
+    <div class="mock-row"><span class="t-dim">12:04:31</span>  <span class="t-red">▓ CATHARI HERESY DETECTED — TRIBUNAL DELAY ACTIVE ▓</span></div>
+    <div class="mock-row"><span class="t-dim">12:04:28</span>  <span style="color:#C8CAD0;">BROTHER AUGUSTINE [Monk] acquired TERESA: Heart at</span> <span class="t-amber">◈340</span></div>
+    <div class="mock-row"><span class="t-dim">12:04:25</span>  <span class="t-cyan">> Market tick synchronized. Blessed connection maintained.</span></div>
+    <div class="mock-row"><span class="t-dim">12:04:22</span>  <span class="t-amber">LIQUIDATOR MEDICI: Estate sale — 4 lots below market</span></div>
+    <div class="mock-row"><span class="t-dim">12:04:19</span>  <span class="t-green">AUTHENTICATOR: LUCIA: Left Eye (Preserved) — VERIFIED AUTHENTIC +25%</span></div>
+    <div class="mock-row"><span class="t-dim">12:04:16</span>  <span class="t-green">You won LOT-0038: Ambrose Dried Blood Vial at ◈89</span></div>
+    <div class="mock-row"><span class="t-dim">12:04:13</span>  <span class="t-red">OUTBID: LOT-0042 Sebastian Arrow-Pierced Rib — ◈312 (BORGIA +22)</span></div>
+    <div class="mock-row"><span class="t-dim">12:04:10</span>  <span class="t-cyan">> Canonical verification: PASS. Exchange rate: 1◈ = 1◈</span></div>
+  </div>
+
+  <div class="terminal-embed">
+    <div class="term-header">Sample Feed — Participant Intelligence</div>
+    <div class="term-row"><span class="t-dim">09:42:18</span> <span class="t-cyan">MARKET</span>  Brother Augustine acquires TERESA Finger Bone at 340</div>
+    <div class="term-row"><span class="t-dim">09:42:31</span> <span class="t-cyan">MARKET</span>  <span class="t-amber">RIVAL COLLECTOR BORGIA at 8/12 AMBROSE</span> — NEAR COMPLETION</div>
+    <div class="term-row"><span class="t-dim">09:42:45</span> <span class="t-cyan">INTEL</span>   Liquidator Medici dumping SEBASTIAN holdings — 4 lots below market</div>
+    <div class="term-row"><span class="t-dim">09:43:02</span> <span class="t-cyan">AUTH</span>    Authenticator verifies FRANCIS Stigmata Cloth — <span class="t-green">VALUE +28%</span></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 6.0 — MARKET EVENTS
+     ============================================================ -->
+<svg class="dither-divider" viewBox="0 0 800 10" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="10" fill="url(#dither3)" opacity="0.22"/>
+</svg>
+
+<div class="section" id="s6">
+  <div class="section-num">Section 6.0</div>
+  <h2 class="section-title">Market Events</h2>
+
+  <h3>6.1 Heresy System</h3>
+
+  <p>Five historical heterodox sects disrupt the market in thematically grounded ways. Each sect has a specific impact on specific saints, creating a learnable mapping that rewards deep engagement. Heresy events are the game's equivalent of earnings reports in stock trading. They move the market. The skilled operator reads the sect name and instantly knows which saints are affected.</p>
+
+  <p>When a heresy event fires, AI bidding freezes for four seconds (the Tribunal Delay). This is the operator's window to act on information before the market can react.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Sect</th>
+        <th>Theology</th>
+        <th>Primary Targets</th>
+        <th>Market Effect</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Cathari</td>
+        <td>Rejected material relics as the work of the Demiurge</td>
+        <td>Catherine, Teresa</td>
+        <td>Depresses prices. Broad market downturn with concentrated effect on female saints.</td>
+      </tr>
+      <tr>
+        <td>Flagellants</td>
+        <td>Introduced counterfeit penitential relics</td>
+        <td>Sebastian, Francis</td>
+        <td>Supply confusion. Spikes prices on martyrdom and stigmata relics as buyers seek authenticated pieces.</td>
+      </tr>
+      <tr>
+        <td>Waldensians</td>
+        <td>Targeted commercialization of the sacred</td>
+        <td>High-value lots</td>
+        <td>Disrupts expensive relics. Class I prices drop. Class III unaffected. Progressive taxation on value.</td>
+      </tr>
+      <tr>
+        <td>Bogomils</td>
+        <td>Rejected the cross and physical devotion</td>
+        <td>Bartholomew, Ambrose</td>
+        <td>Depresses Passion-adjacent relics. Creates buying window for body-part-heavy saints.</td>
+      </tr>
+      <tr>
+        <td>Gnostic Order</td>
+        <td>Claimed secret knowledge invalidated public relics</td>
+        <td>All saints (mild)</td>
+        <td>Mild universal depression. Authentication challenges increase. Uncertainty premium rises.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 Macro Events</h3>
+
+  <p>Beyond heresy, the market responds to large-scale historical events that create structural shifts in supply and demand.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Event</th>
+        <th>Effect</th>
+        <th class="num">Duration</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Papal Bull</td>
+        <td>Demand surge for specific saint. Prices spike across all relic classes.</td>
+        <td class="num">120-180s</td>
+      </tr>
+      <tr>
+        <td>Crusade Haul</td>
+        <td>Supply flood. Many new lots at depressed opening prices.</td>
+        <td class="num">90-150s</td>
+      </tr>
+      <tr>
+        <td>Monastery Dissolution</td>
+        <td>Fire sale. Relics from one saint enter market below equilibrium.</td>
+        <td class="num">60-120s</td>
+      </tr>
+      <tr>
+        <td>Pilgrimage Wave</td>
+        <td>Demand surge for popular saints. Teresa, Francis prices increase.</td>
+        <td class="num">90-120s</td>
+      </tr>
+      <tr>
+        <td>Estate Sale</td>
+        <td>Mixed lot dump from a deceased collector. Randomized saint, below market.</td>
+        <td class="num">45-90s</td>
+      </tr>
+      <tr>
+        <td>Papal Subsidy</td>
+        <td>Emergency capital injection of 100 credits. Prevents operator bankruptcy.</td>
+        <td class="num">Instant</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================
+     SECTION 7.0 — OPERATOR INTERFACE
+     ============================================================ -->
+<svg class="dither-divider" viewBox="0 0 800 10" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="10" fill="url(#dither4)" opacity="0.22"/>
+</svg>
+
+<div class="section" id="s7">
+  <div class="section-num">Section 7.0</div>
+  <h2 class="section-title">Operator Interface</h2>
+
+  <p>The operator interface is a three-column command center built on a BSP (Binary Space Partitioning) grid layout. Information density is a feature, not a side effect. The interface is modeled on financial trading terminals: every element serves a functional purpose. There is no decoration.</p>
+
+  <div class="wireframe">
++------------------------------------------------------------------+
+| HOLY_OPS.EXE  Relic Exchange v2.0       NET WORTH: 2,847  DAY 5  |
++------------------------------------------------------------------+
+| AMBROSE <span class="t-green">||||</span><span class="t-dim">||||||||</span> 4/12  LUCIA <span class="t-green">||</span><span class="t-dim">||||||||</span> 2/10  TERESA <span class="t-green">||||||</span><span class="t-dim">||</span> 6/8   |
++----------+-------------------------------+-----------------------+
+|          |                               |                       |
+| YOUR     |    BSP MARKET GRID            |  BID PANEL            |
+| BIDS (3) |                               |  LOT-0042             |
+|          |  +----------+-----------+     |  AMBROSE Rib Fragment |
+| LOT-042  |  |          |           |     |  Class I              |
+|  340  W  |  | LOT-042  | LOT-071   |     |                       |
+| LOT-071  |  |  <span class="t-green">WINNING</span> | <span class="t-amber">ACTIVE</span>    |     |  Current: <span class="t-amber">340</span>        |
+|  180  O  |  |          |           |     |  Your bid: <span class="t-green">340</span>       |
+| LOT-099  |  +----------+-----+-----+     |  Timer: <span class="t-red">0:23</span>         |
+|  95   W  |  |          |     |     |     |                       |
+|          |  | LOT-099  | 112 | 033 |     |  [+10] [+50] [+100]  |
+|----------|  |          |     |     |     |-----------------------|
+| ALL LOTS |  +----------+-----+-----+     |  TERMINAL FEED        |
+|          |                               |                       |
+| LOT-001  |                               |  <span class="t-red">FLAGELLANT heresy</span>    |
+| LOT-002  |                               |  <span class="t-cyan">Lot closing: 042</span>     |
+| LOT-003  |                               |  <span class="t-dim">Market tick sync</span>     |
+| LOT-004  |                               |  <span class="t-amber">Borgia buys LUCIA</span>   |
+|          |                               |-----------------------|
+|          |                               |  PORTFOLIO             |
+|          |                               |  Cash: <span class="t-amber">1,240</span>         |
+|          |                               |  Holdings: <span class="t-cyan">1,607</span>      |
++----------+-------------------------------+-----------------------+</div>
+
+  <h3>Layout Columns</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Column</th>
+        <th class="num">Width</th>
+        <th>Contents</th>
+        <th>Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Left</td>
+        <td class="num">220px</td>
+        <td>Lot Ticker</td>
+        <td>Position tracking. Pinned "Your Bids" section at top, scrollable "All Lots" below. Click to select.</td>
+      </tr>
+      <tr>
+        <td>Center</td>
+        <td class="num">flex</td>
+        <td>BSP Market Grid</td>
+        <td>The market. Dynamic treemap of all active lots. Size reflects weight (urgency, activity, player interest).</td>
+      </tr>
+      <tr>
+        <td>Right</td>
+        <td class="num">320px</td>
+        <td>Bid Panel / Feed / Portfolio</td>
+        <td>Action and intelligence. Bid controls for selected lot, scrolling intelligence feed, portfolio summary.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>BSP Grid Behavior</h3>
+  <p>The market grid uses Binary Space Partitioning to dynamically size auction cells based on their weight. Lots the operator has bid on stay large and visible (+1.0 weight). Lots nearing expiry grow to signal urgency (+0.5 weight under 15 seconds). Active lots with many bids expand to reflect market heat. The grid is a living heat map: the operator can read market sentiment from the shape of the layout before parsing a single number.</p>
+
+  <h3>Terminal Feed</h3>
+  <p>The feed is not decoration. It is the primary skill surface. Market transactions, heresy reports, AI collector movements, demand events, and authentication results scroll in real time. The operator who reads the feed trades better than the operator who ignores it. Attention allocation is the core skill.</p>
+</div>
+
+<!-- ============================================================
+     SECTION 8.0 — ECONOMY
+     ============================================================ -->
+<svg class="dither-divider" viewBox="0 0 800 10" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="10" fill="url(#dither1)" opacity="0.2"/>
+</svg>
+
+<div class="section" id="s8">
+  <div class="section-num">Section 8.0</div>
+  <h2 class="section-title">Economy</h2>
+
+  <p>A single currency, the Obol, keeps the monetary system clean. The complexity lives in the multi-dimensional relic valuation, not in the monetary system. The operator starts with limited capital and must trade their way to wealth sufficient to complete their target saints.</p>
+
+  <h3>Starting Conditions</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Parameter</th>
+        <th class="num">Value</th>
+        <th>Rationale</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Starting capital</td>
+        <td class="num">2,000</td>
+        <td class="dim">Low enough to force trading from the start. Completing Teresa requires doubling your money.</td>
+      </tr>
+      <tr>
+        <td>Starting relic</td>
+        <td class="num">1 (Class III, ~60 value)</td>
+        <td class="dim">Seed asset. Can be sold immediately or held. Teaches the sell mechanic.</td>
+      </tr>
+      <tr>
+        <td>Inventory capacity</td>
+        <td class="num">Soft cap ~12-15</td>
+        <td class="dim">No hard limit. Provenance decay on held relics discourages passive hoarding.</td>
+      </tr>
+      <tr>
+        <td>Provenance decay rate</td>
+        <td class="num">1.5%/min, floor 70%</td>
+        <td class="dim">Held relics lose value over time. Forces active portfolio management.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Completion Costs (Estimated)</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Saint</th>
+        <th class="num">Relics</th>
+        <th class="num">Est. Total Cost</th>
+        <th class="num">Difficulty</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Teresa</td>
+        <td class="num">8</td>
+        <td class="num">3,200 - 4,800</td>
+        <td class="num">High (per-relic cost)</td>
+      </tr>
+      <tr>
+        <td>Agatha</td>
+        <td class="num">9</td>
+        <td class="num">2,400 - 3,600</td>
+        <td class="num">Moderate</td>
+      </tr>
+      <tr>
+        <td>Lucia</td>
+        <td class="num">10</td>
+        <td class="num">2,800 - 4,200</td>
+        <td class="num">Moderate-High</td>
+      </tr>
+      <tr>
+        <td>Catherine</td>
+        <td class="num">10</td>
+        <td class="num">2,600 - 3,800</td>
+        <td class="num">Moderate (Cathari discount)</td>
+      </tr>
+      <tr>
+        <td>Bartholomew</td>
+        <td class="num">11</td>
+        <td class="num">3,000 - 4,500</td>
+        <td class="num">Moderate-High</td>
+      </tr>
+      <tr>
+        <td>Ambrose</td>
+        <td class="num">12</td>
+        <td class="num">3,600 - 5,400</td>
+        <td class="num">High (volume)</td>
+      </tr>
+      <tr>
+        <td>Sebastian</td>
+        <td class="num">12</td>
+        <td class="num">3,400 - 5,200</td>
+        <td class="num">High (Flagellant volatility)</td>
+      </tr>
+      <tr>
+        <td>Francis</td>
+        <td class="num">13</td>
+        <td class="num">4,200 - 6,800</td>
+        <td class="num">Extreme</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Trade Economics</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Parameter</th>
+        <th class="num">Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Average profitable trade margin</td>
+        <td class="num">8-15%</td>
+      </tr>
+      <tr>
+        <td>Heresy-window trade margin</td>
+        <td class="num">15-30%</td>
+      </tr>
+      <tr>
+        <td>Sell execution</td>
+        <td class="num">Instant at market price (v1)</td>
+      </tr>
+      <tr>
+        <td>Margin trading rate</td>
+        <td class="num">3%/minute borrowed</td>
+      </tr>
+      <tr>
+        <td>Early-game volatility reduction</td>
+        <td class="num">40% reduced sigma</td>
+      </tr>
+      <tr>
+        <td>Early-game spread tightening</td>
+        <td class="num">30% tighter</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Portfolio UI mockup -->
+  <div class="ui-mockup" style="max-width:640px;">
+    <div class="mock-header">PORTFOLIO — DAY 5 SETTLEMENT</div>
+    <div class="mock-row"><span class="t-amber">PORTFOLIO ◈ 2,847</span>                     <span class="t-green">NET: +42.3%</span></div>
+    <div class="mock-row"><span class="t-dim">─────────────────────────────────────────────────</span></div>
+    <div class="mock-row"><span class="t-cyan">TRADE STOCK [4/15]</span></div>
+    <div class="mock-row">  <span class="mock-status status-winning"></span>Sebastian: Arrow-Pierced Rib    <span class="t-amber">◈312</span> <span class="t-green">(+8%)</span>   <span class="t-dim">2:15 held</span></div>
+    <div class="mock-row">  <span class="mock-status status-outbid"></span>Lucia: Left Eye (Preserved)     <span class="t-amber">◈445</span> <span class="t-red">(-3%)</span>   <span class="t-dim">0:45 held</span></div>
+    <div class="mock-row">  <span class="mock-status status-winning"></span>Ambrose: Dried Blood Vial       <span class="t-amber">◈89</span>  <span class="t-green">(+22%)</span>  <span class="t-dim">4:30 held</span>  <span class="t-red">DECAY</span></div>
+    <div class="mock-row">  <span class="mock-status status-active"></span>Catherine: Head (Preserved)     <span class="t-amber">◈523</span> <span class="t-green">(+1%)</span>   <span class="t-dim">0:12 held</span></div>
+    <div class="mock-row"></div>
+    <div class="mock-row"><span class="t-green">ENSHRINEMENT: TERESA [3/8]</span>       <span class="t-dim">◈1,240 invested</span></div>
+    <div class="mock-row">  Heart (Transverberated)         <span class="t-amber">◈480</span>  <span class="t-dim">LOCKED</span></div>
+    <div class="mock-row">  Left Hand (Incorrupt)           <span class="t-amber">◈410</span>  <span class="t-dim">LOCKED</span></div>
+    <div class="mock-row">  Hair Clipping                   <span class="t-amber">◈350</span>  <span class="t-dim">LOCKED</span></div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-label">Margin Trading</div>
+    <p>Advanced operators can borrow against their portfolio at 3% per minute. This enables leveraged positions when the operator has high conviction on a price movement, but creates significant downside risk if the trade moves against them. Margin trading is not surfaced in the tutorial. It is discovered through the terminal feed.</p>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 9.0 — SESSION STRUCTURE
+     ============================================================ -->
+<svg class="dither-divider" viewBox="0 0 800 10" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="10" fill="url(#dither2)" opacity="0.22"/>
+</svg>
+
+<div class="section" id="s9">
+  <div class="section-num">Section 9.0</div>
+  <h2 class="section-title">Session Structure</h2>
+
+  <h3>Market Days</h3>
+  <p>A session consists of 12 market days. Each day runs the Briefing-Market-Bell-Settlement cycle. Total session length is approximately 15-25 minutes depending on settlement deliberation time. The session ends after the twelfth settlement, regardless of the operator's capital or completion status.</p>
+
+  <h3>Scoring Formula</h3>
+  <p>The final score combines collection progress, financial performance, and trading skill into a single composite number.</p>
+
+  <div class="terminal-embed">
+    <div class="term-header">Scoring Calculation</div>
+    <div class="term-row"><span class="t-cyan">COLLECTION</span>   Saints completed x 1000          <span class="t-dim">(primary)</span></div>
+    <div class="term-row"><span class="t-cyan">PROGRESS</span>     Relics enshrined x 50             <span class="t-dim">(partial credit)</span></div>
+    <div class="term-row"><span class="t-cyan">NET WORTH</span>    Final cash + portfolio value       <span class="t-dim">(tiebreaker)</span></div>
+    <div class="term-row"><span class="t-cyan">EFFICIENCY</span>   Profitable trades / total trades   <span class="t-dim">(multiplier: 0.8x-1.2x)</span></div>
+    <div class="term-row"><span class="t-dim">----------------------------------------------</span></div>
+    <div class="term-row"><span class="t-amber">FINAL SCORE</span>  (Collection + Progress + Net Worth) x Efficiency</div>
+  </div>
+
+  <h3>Grade Thresholds</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Grade</th>
+        <th>Requirement</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>S</td>
+        <td>3+ saints completed, net worth > starting capital</td>
+        <td class="dim">Master operator. Exceptional market reading and capital management.</td>
+      </tr>
+      <tr>
+        <td>A</td>
+        <td>2 saints completed</td>
+        <td class="dim">Accomplished. Strong trading instincts. Good heresy exploitation.</td>
+      </tr>
+      <tr>
+        <td>B</td>
+        <td>1 saint completed</td>
+        <td class="dim">Competent. Completed a primary objective. Room for trading improvement.</td>
+      </tr>
+      <tr>
+        <td>C</td>
+        <td>50%+ progress on at least one saint, positive net worth</td>
+        <td class="dim">Developing. Understanding the systems but not yet exploiting them.</td>
+      </tr>
+      <tr>
+        <td>D</td>
+        <td>Some relics enshrined, capital remaining</td>
+        <td class="dim">Novice. Learning the interface. Not yet reading the market.</td>
+      </tr>
+      <tr>
+        <td>F</td>
+        <td>Bankruptcy or no enshrined relics</td>
+        <td class="dim">Failed operation. The Commission has noted your performance.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>End States</h3>
+  <p>The session can end in three ways: completion of the twelfth market day (standard), operator bankruptcy (capital reaches zero with no sellable holdings), or early termination by the operator. In all cases, the final score is calculated and the grade assigned. There is no win or lose state — only a grade that reflects the operator's performance across the full session.</p>
+</div>
+
+<!-- ============================================================
+     SECTION 10.0 — TECHNICAL ARCHITECTURE
+     ============================================================ -->
+<svg class="dither-divider" viewBox="0 0 800 10" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="10" fill="url(#dither3)" opacity="0.2"/>
+</svg>
+
+<div class="section" id="s10">
+  <div class="section-num">Section 10.0</div>
+  <h2 class="section-title">Technical Architecture</h2>
+
+  <h3>Platform</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Layer</th>
+        <th>Technology</th>
+        <th>Rationale</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Framework</td>
+        <td>React 18</td>
+        <td class="dim">Component model fits the panel-based UI. Concurrent features for smooth 1s tick cycle.</td>
+      </tr>
+      <tr>
+        <td>Language</td>
+        <td>TypeScript</td>
+        <td class="dim">Type safety for complex game state. Interface definitions serve as living documentation.</td>
+      </tr>
+      <tr>
+        <td>Build</td>
+        <td>Vite 5</td>
+        <td class="dim">Fast HMR during development. Optimized production bundles.</td>
+      </tr>
+      <tr>
+        <td>Styling</td>
+        <td>Tailwind CSS 3 + CSS custom properties</td>
+        <td class="dim">Utility-first for rapid iteration. Custom properties for brand token management.</td>
+      </tr>
+      <tr>
+        <td>UI primitives</td>
+        <td>shadcn/ui (Radix)</td>
+        <td class="dim">Accessible, unstyled primitives. No visual opinions to override.</td>
+      </tr>
+      <tr>
+        <td>Routing</td>
+        <td>React Router v6</td>
+        <td class="dim">Minimal routing needs. Single primary view with modal overlays.</td>
+      </tr>
+      <tr>
+        <td>State</td>
+        <td>React useState / useCallback / useRef</td>
+        <td class="dim">No external state library. Single root state object updated via pure functions.</td>
+      </tr>
+      <tr>
+        <td>Audio</td>
+        <td>Web Audio API</td>
+        <td class="dim">Procedural audio. No asset loading. Sound effects synthesized at runtime.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Engine Design</h3>
+  <p>All game logic resides in pure functions. The engine module exports tick, placeBid, aiBids, and spawnLot as functions that take the current GameState and return a new GameState. No side effects. No mutation. This architecture enables deterministic replay, straightforward testing, and clean separation between game logic and rendering.</p>
+
+  <div class="terminal-embed">
+    <div class="term-header">Engine Interface</div>
+    <div class="term-row"><span class="t-cyan">tick</span>(state: GameState) <span class="t-dim">-></span> GameState      <span class="t-dim">// 1s clock cycle</span></div>
+    <div class="term-row"><span class="t-cyan">placeBid</span>(state, lotId, amount) <span class="t-dim">-></span> GameState</div>
+    <div class="term-row"><span class="t-cyan">aiBids</span>(state: GameState) <span class="t-dim">-></span> GameState     <span class="t-dim">// 3s AI cycle</span></div>
+    <div class="term-row"><span class="t-cyan">spawnLot</span>(state: GameState) <span class="t-dim">-></span> GameState   <span class="t-dim">// 5s spawn cycle</span></div>
+    <div class="term-row"><span class="t-cyan">sellRelic</span>(state, relicId) <span class="t-dim">-></span> GameState   <span class="t-dim">// instant market sell</span></div>
+    <div class="term-row"><span class="t-cyan">enshrine</span>(state, relicId) <span class="t-dim">-></span> GameState    <span class="t-dim">// permanent lock</span></div>
+  </div>
+
+  <h3>State Management</h3>
+  <p>Game state is a single useState&lt;GameState&gt; in the root component, updated via pure functions from the engine module. Memoized components (GridCell, LotTicker, SaintTracker, TerminalFeed, Collection) prevent unnecessary re-renders during the one-second tick cycle. CSS-only animations handle all visual effects.</p>
+
+  <h3>Interval Architecture</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Interval</th>
+        <th class="num">Rate</th>
+        <th>Handler</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Game tick</td>
+        <td class="num">1,000ms</td>
+        <td>tick()</td>
+        <td class="dim">Slowed to half during tribunal delay</td>
+      </tr>
+      <tr>
+        <td>Price update</td>
+        <td class="num">5,000ms</td>
+        <td>updatePrices()</td>
+        <td class="dim">Ornstein-Uhlenbeck process</td>
+      </tr>
+      <tr>
+        <td>Lot spawn</td>
+        <td class="num">5,000ms</td>
+        <td>spawnLot()</td>
+        <td class="dim">Paused at max lot cap</td>
+      </tr>
+      <tr>
+        <td>AI bids</td>
+        <td class="num">3,000ms</td>
+        <td>aiBids()</td>
+        <td class="dim">Paused during tribunal delay</td>
+      </tr>
+      <tr>
+        <td>Feed messages</td>
+        <td class="num">2,500ms</td>
+        <td>generateMessage()</td>
+        <td class="dim">35% heresy, 65% system/market</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>File Architecture</h3>
+  <div class="terminal-embed">
+    <div class="term-header">Source Tree</div>
+    <div class="term-row">src/</div>
+    <div class="term-row">  game/</div>
+    <div class="term-row">    <span class="t-cyan">types.ts</span>          <span class="t-dim">All TypeScript interfaces</span></div>
+    <div class="term-row">    <span class="t-cyan">engine.ts</span>         <span class="t-dim">Core game logic (tick, bid, spawn, AI, sell)</span></div>
+    <div class="term-row">    <span class="t-cyan">market.ts</span>         <span class="t-dim">Price model, mean-reversion, event shocks</span></div>
+    <div class="term-row">    <span class="t-cyan">data.ts</span>           <span class="t-dim">Saints, relics, provenance chains</span></div>
+    <div class="term-row">    <span class="t-cyan">heresy.ts</span>         <span class="t-dim">Heresy events, sect-saint mappings</span></div>
+    <div class="term-row">    <span class="t-cyan">participants.ts</span>   <span class="t-dim">AI archetype behaviors</span></div>
+    <div class="term-row">    <span class="t-cyan">bsp.ts</span>            <span class="t-dim">Binary Space Partitioning grid layout</span></div>
+    <div class="term-row">    <span class="t-cyan">audio.ts</span>          <span class="t-dim">Web Audio procedural sound</span></div>
+    <div class="term-row">  components/</div>
+    <div class="term-row">    <span class="t-cyan">GridCell.tsx</span>      <span class="t-dim">Individual BSP grid auction cell</span></div>
+    <div class="term-row">    <span class="t-cyan">LotTicker.tsx</span>     <span class="t-dim">Left sidebar position tracker</span></div>
+    <div class="term-row">    <span class="t-cyan">BidPanel.tsx</span>      <span class="t-dim">Right sidebar bid controls</span></div>
+    <div class="term-row">    <span class="t-cyan">TerminalFeed.tsx</span>  <span class="t-dim">Intelligence feed</span></div>
+    <div class="term-row">    <span class="t-cyan">Portfolio.tsx</span>     <span class="t-dim">Holdings + P&amp;L view</span></div>
+    <div class="term-row">    <span class="t-cyan">SaintTracker.tsx</span>  <span class="t-dim">Top bar completion progress</span></div>
+    <div class="term-row">    <span class="t-cyan">Settlement.tsx</span>    <span class="t-dim">End-of-day review + enshrine UI</span></div>
+    <div class="term-row">  pages/</div>
+    <div class="term-row">    <span class="t-cyan">Index.tsx</span>         <span class="t-dim">Root layout, game loop orchestration</span></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     APPENDIX — DOCUMENT CONTROL
+     ============================================================ -->
+<hr>
+
+<div class="section" id="appendix">
+  <div class="section-num">Appendix</div>
+  <h2 class="section-title">Document Control</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Document ID</td>
+        <td>PCSAI-GDD-2026-002</td>
+      </tr>
+      <tr>
+        <td>Classification</td>
+        <td>RESTRICTED</td>
+      </tr>
+      <tr>
+        <td>Revision</td>
+        <td>1.0</td>
+      </tr>
+      <tr>
+        <td>Date</td>
+        <td>2026.03.21</td>
+      </tr>
+      <tr>
+        <td>Prepared by</td>
+        <td>Pontifical Commission on Sacred Asset Infrastructure</td>
+      </tr>
+      <tr>
+        <td>Supersedes</td>
+        <td>PCSAI-GDD-2026-001</td>
+      </tr>
+      <tr>
+        <td>Distribution</td>
+        <td>Authorized operators only</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>This document contains classified information relating to the operation and design of the HOLY_OPS Relic Exchange Terminal. Unauthorized reproduction, distribution, or disclosure is prohibited. All recipients are reminded of their obligations under PCSAI Directive 7.4 regarding the handling of restricted materials.</p>
+</div>
+
+<!-- ============================================================
+     SECTION 11.0 — EXPANSION CONCEPTS
+     ============================================================ -->
+
+<!-- Cross ornament -->
+<svg class="cross-ornament" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <rect x="10" y="2" width="4" height="20" fill="#C8C8CE"/>
+  <rect x="2" y="8" width="20" height="4" fill="#C8C8CE"/>
+  <rect x="10" y="2" width="4" height="4" fill="#9898A0"/>
+  <rect x="10" y="18" width="4" height="4" fill="#9898A0"/>
+  <rect x="2" y="8" width="4" height="4" fill="#9898A0"/>
+  <rect x="18" y="8" width="4" height="4" fill="#9898A0"/>
+</svg>
+
+<div class="section" id="s11">
+  <div class="section-num">Section 11.0</div>
+  <h2 class="section-title">Expansion Concepts</h2>
+
+  <div class="expansion-stamp">PRE-DECISIONAL DRAFT — NOT FOR IMPLEMENTATION</div>
+
+  <p>The following concepts represent potential expansion vectors for the HOLY_OPS exchange platform. Each has been assessed for thematic coherence, mechanical depth, and integration feasibility. None have been approved for development. This section serves as a research index for future design cycles.</p>
+
+  <h3>11.1 Souls Futures Market</h3>
+  <p>A derivatives panel enabling forward contracts on saint asset classes. Operators would purchase futures contracts speculating on the direction of a saint's relic prices over the next 3-5 market days. The mechanic draws from the historical indulgence economy, where the Church effectively sold futures contracts on salvation — paying now for a reduction in future purgatorial time. A souls futures panel would display a yield curve per saint, with contract prices reflecting aggregate market expectations. The operator who correctly reads upcoming heresy patterns and demand events could profit from futures positions without ever touching the underlying relics.</p>
+
+  <!-- MERIT FUTURES panel mockup -->
+  <div class="panel-mockup">
+    <div class="panel-title-bar">
+      <span>MERIT FUTURES</span>
+      <span><span class="live-dot"></span> LIVE — DAY 04 / 12</span>
+    </div>
+    <div class="panel-body">
+      <div class="panel-row"><span style="color:#6E7078;">CLASS          SPOT    FWD+3   FWD+5   OPEN INT</span></div>
+      <div class="panel-divider"></div>
+      <div class="panel-row"><span style="color:#C8CAD0;">APOSTOLIC</span>      <span style="color:#D4A017;">342</span>     <span style="color:#2EAA4A;">358▲</span>    <span style="color:#2EAA4A;">371▲</span>    <span style="color:#6E7078;">12 CONT</span></div>
+      <div class="panel-row"><span style="color:#C8CAD0;">MARIAN</span>         <span style="color:#D4A017;">289</span>     <span style="color:#D43030;">274▼</span>    <span style="color:#D43030;">261▼</span>     <span style="color:#6E7078;">8 CONT</span></div>
+      <div class="panel-row"><span style="color:#C8CAD0;">MARTYR</span>         <span style="color:#D4A017;">156</span>     <span style="color:#2EAA4A;">162▲</span>    <span style="color:#6E7078;">159─</span>     <span style="color:#6E7078;">4 CONT</span></div>
+      <div class="panel-row"><span style="color:#C8CAD0;">PATRISTIC</span>      <span style="color:#D4A017;">203</span>     <span style="color:#2EAA4A;">210▲</span>    <span style="color:#2EAA4A;">224▲</span>     <span style="color:#6E7078;">6 CONT</span></div>
+      <div class="panel-divider"></div>
+      <div class="panel-row"><span style="color:#6E7078;">YOUR POSITIONS</span></div>
+      <div class="panel-row"><span style="color:#2EAA4A;">LONG</span>  APOSTOLIC +3   @ <span style="color:#D4A017;">351</span>   MARGIN: <span style="color:#D4A017;">40 OB</span>   <span style="color:#2EAA4A;">+2.0%</span></div>
+      <div class="panel-row"><span style="color:#D43030;">SHORT</span> MARIAN +5      @ <span style="color:#D4A017;">270</span>   MARGIN: <span style="color:#D4A017;">30 OB</span>   <span style="color:#2EAA4A;">+5.5%</span></div>
+      <div class="panel-divider"></div>
+      <!-- Sparkline curves using SVG -->
+      <svg viewBox="0 0 580 60" style="width:100%;height:60px;display:block;margin-top:4px;" xmlns="http://www.w3.org/2000/svg">
+        <text x="0" y="10" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078">APOSTOLIC</text>
+        <polyline points="70,28 120,25 170,22 220,20 270,18 320,16 370,15 420,14" fill="none" stroke="#2EAA4A" stroke-width="1"/>
+        <text x="0" y="30" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078">MARIAN</text>
+        <polyline points="70,30 120,32 170,35 220,37 270,40 320,42 370,44 420,46" fill="none" stroke="#D43030" stroke-width="1"/>
+        <text x="0" y="50" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078">MARTYR</text>
+        <polyline points="70,48 120,47 170,46 220,45 270,44 320,45 370,46 420,45" fill="none" stroke="#6E7078" stroke-width="1"/>
+        <!-- Day markers -->
+        <text x="70" y="58" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#6E7078">D4</text>
+        <text x="220" y="58" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#6E7078">D7</text>
+        <text x="370" y="58" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#6E7078">D9</text>
+      </svg>
+      <div class="panel-row" style="margin-top:8px;"><span style="color:#6E7078;">[BUY LONG]  [SELL SHORT]  [CLOSE POSITION]</span></div>
+    </div>
+  </div>
+
+  <h3>11.2 Doctrine Deployment</h3>
+  <p>An active market manipulation mechanic. The operator could expend Obols to deploy doctrinal communications — papal bulls, excommunication threats, miracle proclamations — that influence AI participant behavior. Deploy a bull praising Teresa and Pilgrim demand for Teresa relics surges. Issue an excommunication targeting the Borgia collector and their bidding pauses for two market days. The mechanic is grounded in the historical reality of the Church's propaganda apparatus: papal communications were instruments of economic warfare, capable of redirecting pilgrim traffic, invalidating rival claims, and creating or destroying market demand at will.</p>
+
+  <!-- DOCTRINE DEPLOYMENT panel mockup -->
+  <div class="panel-mockup">
+    <div class="panel-title-bar">
+      <span>DOCTRINE DEPLOYMENT</span>
+      <span>HAND: 3/3 — DEPLOYED: 1</span>
+    </div>
+    <div class="panel-body">
+      <div class="panel-row"><span style="color:#6E7078;">AVAILABLE DOCTRINES</span></div>
+      <div class="panel-divider"></div>
+      <!-- Card 1 -->
+      <div style="border:1px solid #1E2028;padding:8px;margin:4px 0;">
+        <div class="panel-row"><span style="color:#C8CAD0;font-weight:600;">PAPAL BULL: AUTHENTICATION</span></div>
+        <div class="panel-row"><span style="color:#D4A017;">60 OB</span>  <span style="color:#6E7078;">Duration: 3 days</span></div>
+        <div class="panel-row"><span style="color:#6E7078;">Target one relic class. All relics +15% to equilibrium.</span></div>
+        <div class="panel-row" style="margin-top:4px;"><span style="color:#2A5FD7;">[DEPLOY]</span></div>
+      </div>
+      <!-- Card 2 -->
+      <div style="border:1px solid #1E2028;padding:8px;margin:4px 0;">
+        <div class="panel-row"><span style="color:#C8CAD0;font-weight:600;">EXCOMMUNICATION</span></div>
+        <div class="panel-row"><span style="color:#D4A017;">80 OB</span>  <span style="color:#6E7078;">Duration: 2 days</span></div>
+        <div class="panel-row"><span style="color:#6E7078;">Target one AI trader. Excluded from next 2 auctions.</span></div>
+        <div class="panel-row" style="margin-top:4px;"><span style="color:#2A5FD7;">[DEPLOY]</span></div>
+      </div>
+      <!-- Card 3 -->
+      <div style="border:1px solid #1E2028;padding:8px;margin:4px 0;">
+        <div class="panel-row"><span style="color:#C8CAD0;font-weight:600;">HERESY ACCUSATION</span></div>
+        <div class="panel-row"><span style="color:#D4A017;">50 OB</span>  <span style="color:#6E7078;">Instant</span></div>
+        <div class="panel-row"><span style="color:#6E7078;">Faith Index -8. Target relic flagged DISPUTED.</span></div>
+        <div class="panel-row" style="margin-top:4px;"><span style="color:#2A5FD7;">[DEPLOY]</span></div>
+      </div>
+      <div class="panel-divider"></div>
+      <div class="panel-row"><span style="color:#6E7078;">ACTIVE DOCTRINES</span></div>
+      <div class="panel-row"><span class="live-dot" style="background:#D4A017;"></span> <span style="color:#D4A017;">MENDICANT PREACHING</span>  <span style="color:#6E7078;">1 day remaining — Pilgrim demand +1</span></div>
+      <div class="panel-divider"></div>
+      <div class="panel-row"><span style="color:#6E7078;">[DRAW NEW DOCTRINE — 20 OB]</span></div>
+    </div>
+  </div>
+
+  <h3>11.3 Currency Exchange / Obol Markets</h3>
+  <p>The Obol (◈) — named for the coin placed in the mouths of the dead as payment to Charon for passage across the River Styx — is currently the sole unit of account. An expansion could introduce historical currency pairs: the Venetian ducat, the Florentine florin, the Byzantine bezant, the livre tournois. Provenance origin would determine pricing currency. A Venetian-provenance relic would be priced in ducats; a French-provenance relic in livres. Exchange rates would fluctuate based on geopolitical events in the terminal feed, creating a forex layer atop the relic market. The operator who notices a bezant devaluation could buy Constantinople-provenance relics cheaply before the exchange rate corrects.</p>
+
+  <!-- CURRENCY EXCHANGE panel mockup -->
+  <div class="panel-mockup">
+    <div class="panel-title-bar">
+      <span>OBOL EXCHANGE</span>
+      <span><span class="live-dot"></span> FX RATES</span>
+    </div>
+    <div class="panel-body">
+      <div class="panel-row"><span style="color:#6E7078;">PAIR              BID      ASK      CHG      24H</span></div>
+      <div class="panel-divider"></div>
+      <div class="panel-row"><span style="color:#C8CAD0;">◈/DUCAT</span>           <span style="color:#D4A017;">3.42</span>     <span style="color:#D4A017;">3.48</span>     <span style="color:#2EAA4A;">+0.12</span>    <span style="color:#2EAA4A;">▲3.6%</span></div>
+      <div class="panel-row">  <div class="meter-track" style="width:200px;display:inline-block;vertical-align:middle;"><div class="meter-fill bar-animated" style="width:65%;background:#2EAA4A;"></div></div></div>
+      <div class="panel-row"><span style="color:#C8CAD0;">◈/FLORIN</span>          <span style="color:#D4A017;">2.81</span>     <span style="color:#D4A017;">2.86</span>     <span style="color:#D43030;">-0.08</span>    <span style="color:#D43030;">▼2.8%</span></div>
+      <div class="panel-row">  <div class="meter-track" style="width:200px;display:inline-block;vertical-align:middle;"><div class="meter-fill bar-animated" style="width:42%;background:#D43030;animation-delay:0.3s;"></div></div></div>
+      <div class="panel-row"><span style="color:#C8CAD0;">◈/BEZANT</span>          <span style="color:#D4A017;">5.17</span>     <span style="color:#D4A017;">5.30</span>     <span style="color:#2EAA4A;">+0.41</span>    <span style="color:#2EAA4A;">▲8.6%</span></div>
+      <div class="panel-row">  <div class="meter-track" style="width:200px;display:inline-block;vertical-align:middle;"><div class="meter-fill bar-animated" style="width:86%;background:#D4A017;animation-delay:0.6s;"></div></div></div>
+      <div class="panel-row"><span style="color:#C8CAD0;">◈/LIVRE</span>           <span style="color:#D4A017;">1.94</span>     <span style="color:#D4A017;">1.97</span>     <span style="color:#6E7078;">+0.01</span>    <span style="color:#6E7078;">─0.5%</span></div>
+      <div class="panel-row">  <div class="meter-track" style="width:200px;display:inline-block;vertical-align:middle;"><div class="meter-fill bar-animated" style="width:51%;background:#6E7078;animation-delay:0.9s;"></div></div></div>
+      <div class="panel-divider"></div>
+      <div class="panel-row"><span style="color:#3AA8C8;">ALERT:</span> <span style="color:#C8CAD0;">Bezant surge — Constantinople provenance relics underpriced in ◈</span></div>
+      <div class="panel-row"><span style="color:#6E7078;">[CONVERT]  [HEDGE]  [HISTORY]</span></div>
+    </div>
+  </div>
+
+  <h3>11.4 Indulgence Index</h3>
+  <p>A parallel market tracking the price and availability of indulgences — the Church's mechanism for remitting temporal punishment due for sins. When indulgences are cheap and plentiful, relic demand contracts: why purchase a saint's bone when you can buy forgiveness directly? When indulgences are restricted — as during reform periods or papal succession crises — relic demand surges as the faithful seek alternative channels of grace. The Indulgence Index would function as a leading macro indicator, displayed as a graph in the terminal interface. Its movements would forecast broad market direction, rewarding operators who monitor the spiritual economy alongside the material one.</p>
+
+  <!-- INDULGENCE INDEX panel mockup -->
+  <div class="panel-mockup">
+    <div class="panel-title-bar">
+      <span>INDULGENCE INDEX</span>
+      <span>MACRO INDICATOR</span>
+    </div>
+    <div class="panel-body">
+      <div class="panel-row" style="font-size:18px;"><span style="color:#D4A017;">◈ 34.2</span> <span style="color:#6E7078;font-size:11px;">per plenary indulgence</span> <span style="color:#D43030;font-size:11px;">▼12.4% this session</span></div>
+      <div style="margin:8px 0;">
+        <svg viewBox="0 0 580 80" style="width:100%;height:80px;display:block;" xmlns="http://www.w3.org/2000/svg">
+          <!-- Price area -->
+          <polyline points="0,20 50,22 100,18 150,25 200,30 250,28 300,35 350,42 400,48 450,52 500,55 550,58 580,60" fill="none" stroke="#D4A017" stroke-width="1.5"/>
+          <!-- Relic demand inverse correlation line -->
+          <polyline points="0,60 50,58 100,62 150,55 200,50 250,52 300,45 350,38 400,32 450,28 500,25 550,22 580,20" fill="none" stroke="#3AA8C8" stroke-width="1" stroke-dasharray="3 3"/>
+          <!-- Legend -->
+          <line x1="0" y1="75" x2="20" y2="75" stroke="#D4A017" stroke-width="1.5"/>
+          <text x="24" y="78" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#6E7078">INDULGENCE PRICE</text>
+          <line x1="150" y1="75" x2="170" y2="75" stroke="#3AA8C8" stroke-width="1" stroke-dasharray="3 3"/>
+          <text x="174" y="78" font-family="'IBM Plex Mono',monospace" font-size="6" fill="#6E7078">RELIC DEMAND (INVERSE)</text>
+          <!-- Annotation -->
+          <text x="400" y="14" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#D43030">REFORM PERIOD</text>
+          <line x1="400" y1="16" x2="400" y2="48" stroke="#D43030" stroke-width="0.5" stroke-dasharray="2 2"/>
+        </svg>
+      </div>
+      <div class="panel-divider"></div>
+      <div class="panel-row"><span style="color:#6E7078;">MARKET SIGNAL:</span> <span style="color:#2EAA4A;">BULLISH FOR RELICS</span></div>
+      <div class="panel-row"><span style="color:#6E7078;">Indulgence prices falling → faithful turning to relics → demand rising</span></div>
+      <div class="panel-row"><span style="color:#6E7078;">Correlation strength:</span> <span style="color:#D4A017;">0.82</span> <span style="color:#6E7078;">(strong inverse)</span></div>
+    </div>
+  </div>
+
+  <h3>11.5 Pilgrimage Route Intelligence</h3>
+  <p>A graph-based visualization of pilgrimage traffic patterns across major European routes: the Camino de Santiago, the Via Francigena, the Canterbury Road. Routes would illuminate based on simulated traveler volume, functioning as a leading indicator for saint-specific demand surges. When the Camino lights up, Francis and James relics appreciate. When the Via Francigena activates, Roman saints (Sebastian, Bartholomew) see increased interest. The panel would provide spatial-temporal intelligence that complements the text-based terminal feed, giving the operator a second information channel to read.</p>
+
+  <!-- PILGRIMAGE ROUTES panel mockup -->
+  <div class="panel-mockup">
+    <div class="panel-title-bar">
+      <span>PILGRIMAGE ROUTE INTELLIGENCE</span>
+      <span><span class="live-dot"></span> TRAFFIC MONITOR</span>
+    </div>
+    <div class="panel-body">
+      <!-- Route map as SVG network -->
+      <svg viewBox="0 0 580 180" style="width:100%;height:180px;display:block;" xmlns="http://www.w3.org/2000/svg">
+        <!-- City nodes -->
+        <circle cx="480" cy="40" r="4" fill="#C8CAD0"/><text x="490" y="43" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#C8CAD0">CANTERBURY</text>
+        <circle cx="300" cy="60" r="4" fill="#C8CAD0"/><text x="310" y="63" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#C8CAD0">PARIS</text>
+        <circle cx="100" cy="90" r="5" fill="#2EAA4A"/><text x="110" y="93" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#2EAA4A">COMPOSTELA</text>
+        <circle cx="350" cy="120" r="4" fill="#D4A017"/><text x="360" y="123" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#D4A017">ROME</text>
+        <circle cx="250" cy="100" r="3" fill="#6E7078"/><text x="260" y="103" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078">LYON</text>
+        <circle cx="420" cy="140" r="3" fill="#6E7078"/><text x="430" y="143" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078">ASSISI</text>
+        <circle cx="500" cy="100" r="3" fill="#6E7078"/><text x="510" y="103" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078">VENICE</text>
+        <!-- Routes - animated sweep -->
+        <line x1="480" y1="40" x2="300" y2="60" stroke="#6E7078" stroke-width="0.5" stroke-dasharray="3 3"/>
+        <line x1="300" y1="60" x2="250" y2="100" stroke="#6E7078" stroke-width="0.5" stroke-dasharray="3 3"/>
+        <line x1="250" y1="100" x2="100" y2="90" stroke="#2EAA4A" stroke-width="2" stroke-dasharray="6 3" style="animation: route-sweep 3s linear infinite;"/>
+        <line x1="300" y1="60" x2="350" y2="120" stroke="#D4A017" stroke-width="1.5" stroke-dasharray="6 3" style="animation: route-sweep 4s linear infinite;"/>
+        <line x1="350" y1="120" x2="420" y2="140" stroke="#6E7078" stroke-width="0.5" stroke-dasharray="3 3"/>
+        <line x1="350" y1="120" x2="500" y2="100" stroke="#6E7078" stroke-width="0.5" stroke-dasharray="3 3"/>
+        <!-- Traffic volume labels -->
+        <text x="160" y="80" font-family="'IBM Plex Mono',monospace" font-size="8" font-weight="600" fill="#2EAA4A">CAMINO ████████ 84%</text>
+        <text x="310" y="95" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#D4A017">VIA FRANC. ████░░ 52%</text>
+        <text x="380" y="55" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#6E7078">CANTERBURY ██░░░░ 23%</text>
+        <!-- Demand forecast -->
+        <text x="10" y="145" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#6E7078">DEMAND FORECAST:</text>
+        <text x="10" y="158" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#2EAA4A">FRANCIS +18%  JAMES +12%</text>
+        <text x="10" y="170" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#D4A017">SEBASTIAN +8%  BARTHOLOMEW +6%</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>11.6 Schism Risk Index</h3>
+  <p>A macro volatility indicator tracking the probability of a major ecclesiastical schism — modeled on the Great Western Schism of 1378-1417, when competing papal claimants divided European allegiance and disrupted every institution of the Church. As the Schism Risk Index rises, all market volatility increases. At critical thresholds, specific events fire: rival authentication authorities emerge, competing price feeds diverge, AI participants split into factions. A full schism event could temporarily split the exchange into two competing markets with different prices for the same relics, creating arbitrage opportunities for operators nimble enough to trade across the divide.</p>
+
+  <!-- SCHISM RISK panel mockup -->
+  <div class="panel-mockup">
+    <div class="panel-title-bar">
+      <span>SCHISM RISK INDEX</span>
+      <span><span class="blink-warn" style="color:#D43030;">▲ ELEVATED</span></span>
+    </div>
+    <div class="panel-body">
+      <!-- Gauge visualization -->
+      <svg viewBox="0 0 580 120" style="width:100%;height:120px;display:block;" xmlns="http://www.w3.org/2000/svg">
+        <!-- Gauge arc background -->
+        <path d="M 90 100 A 80 80 0 0 1 490 100" fill="none" stroke="#1E2028" stroke-width="12"/>
+        <!-- Green zone (0-30%) -->
+        <path d="M 90 100 A 80 80 0 0 1 210 28" fill="none" stroke="#2EAA4A" stroke-width="12" opacity="0.3"/>
+        <!-- Amber zone (30-60%) -->
+        <path d="M 210 28 A 80 80 0 0 1 370 28" fill="none" stroke="#D4A017" stroke-width="12" opacity="0.3"/>
+        <!-- Red zone (60-100%) -->
+        <path d="M 370 28 A 80 80 0 0 1 490 100" fill="none" stroke="#D43030" stroke-width="12" opacity="0.3"/>
+        <!-- Current value indicator -->
+        <circle cx="340" cy="30" r="6" fill="#D4A017" stroke="#0A0C10" stroke-width="2"/>
+        <!-- Labels -->
+        <text x="90" y="115" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#2EAA4A" text-anchor="middle">STABLE</text>
+        <text x="290" y="12" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#D4A017" text-anchor="middle">TENSION</text>
+        <text x="490" y="115" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#D43030" text-anchor="middle">SCHISM</text>
+        <!-- Current reading -->
+        <text x="290" y="70" font-family="'IBM Plex Mono',monospace" font-size="24" font-weight="600" fill="#D4A017" text-anchor="middle">54%</text>
+        <text x="290" y="85" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#6E7078" text-anchor="middle">SCHISM PROBABILITY</text>
+      </svg>
+      <div class="panel-divider"></div>
+      <div class="panel-row"><span style="color:#6E7078;">CONTRIBUTING FACTORS</span></div>
+      <div class="panel-row"><span style="color:#C8CAD0;">Heresy frequency</span>    <div class="meter-track" style="width:150px;display:inline-block;vertical-align:middle;"><div class="meter-fill bar-animated" style="width:72%;background:#D43030;"></div></div> <span style="color:#D43030;">HIGH</span></div>
+      <div class="panel-row"><span style="color:#C8CAD0;">Papal authority</span>     <div class="meter-track" style="width:150px;display:inline-block;vertical-align:middle;"><div class="meter-fill bar-animated" style="width:38%;background:#D4A017;animation-delay:0.3s;"></div></div> <span style="color:#D4A017;">WEAKENING</span></div>
+      <div class="panel-row"><span style="color:#C8CAD0;">Doctrinal unity</span>    <div class="meter-track" style="width:150px;display:inline-block;vertical-align:middle;"><div class="meter-fill bar-animated" style="width:45%;background:#D4A017;animation-delay:0.6s;"></div></div> <span style="color:#D4A017;">FRACTURED</span></div>
+      <div class="panel-divider"></div>
+      <div class="panel-row"><span style="color:#D43030;">AT 75%: RIVAL AUTHENTICATION EMERGES — DUAL PRICE FEEDS</span></div>
+      <div class="panel-row"><span style="color:#D43030;">AT 90%: FULL SCHISM — MARKET SPLITS INTO ROMAN / AVIGNON</span></div>
+      <div class="panel-row"><span style="color:#6E7078;">VOLATILITY MODIFIER:</span> <span style="color:#D4A017;">1.4x</span> <span style="color:#6E7078;">(all price sigma multiplied)</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Cross ornament -->
+<svg class="cross-ornament" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <rect x="10" y="2" width="4" height="20" fill="#C8C8CE"/>
+  <rect x="2" y="8" width="20" height="4" fill="#C8C8CE"/>
+</svg>
+
+<!-- ============================================================
+     RESEARCH APPENDICES
+     ============================================================ -->
+
+<!-- APPENDIX A — ORIGINAL GAME SPECIFICATION -->
+<hr>
+<div class="section" id="ra">
+  <div class="section-num">Appendix A <span class="status-badge outdated">V0.1 BASELINE</span></div>
+  <h2 class="section-title">Original Game Specification</h2>
+
+  <div class="callout">
+    <div class="callout-label">Document Status</div>
+    <p>This specification describes the v0.1 auction-only build. It has been superseded by the trading redesign (Appendix E) but remains the foundational reference for the existing codebase.</p>
+  </div>
+
+  <h3>Key Parameters</h3>
+  <table>
+    <thead><tr><th>Parameter</th><th>V0.1 Value</th><th>Current Value</th></tr></thead>
+    <tbody>
+      <tr><td>Starting Currency</td><td class="num">&#9670; 5,000</td><td class="num">&#9670; 3,000</td></tr>
+      <tr><td>Initial Lots</td><td class="num">18</td><td class="num">12</td></tr>
+      <tr><td>Max Lots</td><td class="num">30</td><td class="num">20</td></tr>
+      <tr><td>Lot Duration</td><td>45&ndash;150s</td><td>30&ndash;90s</td></tr>
+      <tr><td>Heresy Chance</td><td class="num">35%</td><td class="num">25%</td></tr>
+      <tr><td>Heresy Freeze</td><td class="num">4,000ms</td><td class="num">3,000ms</td></tr>
+      <tr><td>Sell Mechanic</td><td class="dim">None</td><td>Portfolio + Market Price</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Core Concept</h3>
+  <p>HOLY_OPS.EXE v0.1 was a real-time auction simulator where players bid on sacred relics using a fixed budget. The game ended when the player ran out of money. The BSP-weighted grid layout, heresy disruption system, and terminal aesthetic were all established in this version.</p>
+
+  <h3>What Carries Forward</h3>
+  <ul>
+    <li>BSP grid layout with weight-based cell sizing</li>
+    <li>3-column interface architecture (ticker, grid, sidebar)</li>
+    <li>Heresy event system (now with differentiated sect effects)</li>
+    <li>8 saints with historically-grounded relic sets</li>
+    <li>Terminal feed as primary information channel</li>
+    <li>Relic class system (I, II, III)</li>
+  </ul>
+
+  <h3>What Changed</h3>
+  <ul>
+    <li>Fixed budget &rarr; Trading economy (buy low, sell high)</li>
+    <li>Direct collection &rarr; Portfolio management with enshrine decision</li>
+    <li>Flat AI bidders &rarr; Named AI collectors with personalities</li>
+    <li>Uniform heresy &rarr; Sect-differentiated market effects</li>
+    <li>Random starting bids &rarr; Class-aware market pricing</li>
+  </ul>
+</div>
+
+<!-- APPENDIX B — BRAND SYSTEM -->
+<hr>
+<div class="section" id="rb">
+  <div class="section-num">Appendix B <span class="status-badge current">CURRENT</span></div>
+  <h2 class="section-title">Brand System</h2>
+
+  <div class="callout">
+    <div class="callout-label">Document Status</div>
+    <p>The PCSAI brand system defines two visual registers &mdash; Corporate and Terminal &mdash; that coexist throughout the product. This document is the active reference for all visual and typographic decisions.</p>
+  </div>
+
+  <h3>Two-Register Design</h3>
+  <p>The <strong>Corporate Register</strong> handles document chrome, section headings, and metadata &mdash; clean sans-serif type on a warm white ground. The <strong>Terminal Register</strong> handles all in-game surfaces &mdash; monospaced type on a near-black ground with amber/green/red semantic color.</p>
+  <p>These registers never blend. A surface is either corporate or terminal. The tension between bureaucratic composure and occult data feeds is the core aesthetic identity of HOLY_OPS.EXE.</p>
+
+  <h3>Color Tokens</h3>
+  <div class="terminal-embed">
+    <div class="term-header">PCSAI Design Tokens &mdash; Canonical Reference</div>
+    <div class="term-row"><span class="t-dim">/* Corporate Register */</span></div>
+    <div class="term-row">--corp-white:       <span class="t-bold">#F0F0F2</span>    <span class="t-dim">base ground</span></div>
+    <div class="term-row">--corp-grey-100:    <span class="t-bold">#E4E4E8</span>    <span class="t-dim">light borders</span></div>
+    <div class="term-row">--corp-grey-200:    <span class="t-bold">#C8C8CE</span>    <span class="t-dim">dividers, dots</span></div>
+    <div class="term-row">--corp-grey-300:    <span class="t-bold">#9898A0</span>    <span class="t-dim">secondary text</span></div>
+    <div class="term-row">--corp-grey-400:    <span class="t-bold">#686870</span>    <span class="t-dim">body text</span></div>
+    <div class="term-row">--corp-black:       <span class="t-bold">#18181C</span>    <span class="t-dim">headings, rules</span></div>
+    <div class="term-row">--corp-accent:      <span class="t-blue">#2A4BD7</span>    <span class="t-dim">links, stamps</span></div>
+    <div class="term-row"></div>
+    <div class="term-row"><span class="t-dim">/* Terminal Register */</span></div>
+    <div class="term-row">--term-bg:          <span class="t-bold">#0A0C10</span>    <span class="t-dim">deep black</span></div>
+    <div class="term-row">--term-surface:     <span class="t-bold">#12141A</span>    <span class="t-dim">panel bg</span></div>
+    <div class="term-row">--term-border:      <span class="t-bold">#1E2028</span>    <span class="t-dim">subtle edge</span></div>
+    <div class="term-row">--term-text:        <span class="t-bold">#C8CAD0</span>    <span class="t-dim">body mono</span></div>
+    <div class="term-row">--term-text-dim:    <span class="t-bold">#6E7078</span>    <span class="t-dim">labels, chrome</span></div>
+    <div class="term-row">--term-amber:       <span class="t-amber">#D4A017</span>    <span class="t-dim">warnings, gold</span></div>
+    <div class="term-row">--term-green:       <span class="t-green">#2EAA4A</span>    <span class="t-dim">confirm, gain</span></div>
+    <div class="term-row">--term-red:         <span class="t-red">#D43030</span>    <span class="t-dim">danger, loss</span></div>
+    <div class="term-row">--term-cyan:        <span class="t-cyan">#3AA8C8</span>    <span class="t-dim">info, links</span></div>
+  </div>
+
+  <h3>The Ten Commandments of PCSAI Design</h3>
+  <ol>
+    <li><strong>No gradients.</strong> Flat fills only. Light comes from data, not decoration.</li>
+    <li><strong>Two typefaces only.</strong> DM Sans (corporate) and IBM Plex Mono (terminal). No exceptions.</li>
+    <li><strong>Monospaced numbers always.</strong> All financial data uses tabular-nums in IBM Plex Mono.</li>
+    <li><strong>Semantic color only.</strong> Green means gain. Red means loss. Amber means caution. Never decorative.</li>
+    <li><strong>Borders, not shadows.</strong> Depth is indicated by 1px solid lines, never box-shadow.</li>
+    <li><strong>Uppercase sparingly.</strong> Labels and headers only. Body text is sentence case.</li>
+    <li><strong>Terminal surfaces are sacred.</strong> Nothing corporate (rounded corners, soft shadows) enters the terminal register.</li>
+    <li><strong>Data density over whitespace.</strong> Bloomberg, not Apple. Show more, not less.</li>
+    <li><strong>Animate with purpose.</strong> Pulse for live data. Blink for warnings. Never for decoration.</li>
+    <li><strong>The hole-punch dots are non-negotiable.</strong> The left-margin dots ground every page in physical bureaucracy.</li>
+  </ol>
+</div>
+
+<!-- APPENDIX C — RELIC MARKET RESEARCH -->
+<hr>
+<div class="section" id="rc">
+  <div class="section-num">Appendix C <span class="status-badge current">RESEARCH</span></div>
+  <h2 class="section-title">Relic Market Research</h2>
+
+  <div class="callout">
+    <div class="callout-label">Document Status</div>
+    <p>Primary research into the historical economics of medieval relic trading. Findings directly informed the pricing model, relic classification system, and provenance mechanics in the current design.</p>
+  </div>
+
+  <div class="pull-quote">
+    <p>&ldquo;The medieval relic economy was not irrational &mdash; it was a sophisticated market where provenance, miracles, and institutional backing created measurable price differentiation.&rdquo;</p>
+  </div>
+
+  <h3>Key Findings</h3>
+  <ul>
+    <li><strong>Three axes of valuation:</strong> Proximity to the saint (contact vs. representative), miracle attestation count, and institutional authentication.</li>
+    <li><strong>Provenance chains</strong> functioned like modern certificates of authenticity. A relic with a documented chain from Rome commanded 3&ndash;5x the price of an undocumented equivalent.</li>
+    <li><strong>Fraud was endemic</strong> &mdash; multiple heads of John the Baptist existed simultaneously. Markets adapted by pricing authentication risk directly.</li>
+    <li><strong>Class I relics</strong> (body parts) were categorically more valuable than Class II (personal effects) or Class III (contact relics), often by an order of magnitude.</li>
+    <li><strong>Institutional demand</strong> from cathedral chapters and monasteries created reliable floor prices. Private collectors added volatility.</li>
+  </ul>
+
+  <h3>Recommended Price Ranges by Class</h3>
+  <table>
+    <thead><tr><th>Relic Class</th><th>Description</th><th>Base Range</th><th>Authenticated Range</th></tr></thead>
+    <tbody>
+      <tr><td>Class I</td><td>Body parts, bones, blood</td><td class="num">&#9670; 800&ndash;1,400</td><td class="num">&#9670; 1,200&ndash;2,200</td></tr>
+      <tr><td>Class II</td><td>Personal effects, clothing</td><td class="num">&#9670; 300&ndash;700</td><td class="num">&#9670; 500&ndash;1,000</td></tr>
+      <tr><td>Class III</td><td>Objects touched to relics</td><td class="num">&#9670; 80&ndash;250</td><td class="num">&#9670; 150&ndash;400</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Design Implications</h3>
+  <ul>
+    <li>Provenance attestation should be a visible data field on each lot, directly affecting fair value</li>
+    <li>Authentication risk creates natural price volatility &mdash; heresy events can revoke authentication</li>
+    <li>Institutional vs. private demand maps cleanly onto AI collector personalities</li>
+    <li>The class system provides intuitive risk tiers for new players</li>
+  </ul>
+</div>
+
+<!-- APPENDIX D — TRADING TERMINAL RESEARCH -->
+<hr>
+<div class="section" id="rd">
+  <div class="section-num">Appendix D <span class="status-badge future">FUTURE-FACING</span></div>
+  <h2 class="section-title">Trading Terminal Research</h2>
+
+  <div class="callout">
+    <div class="callout-label">Document Status</div>
+    <p>UX analysis of professional trading terminals (Bloomberg, Refinitiv, TradingView) to inform the HOLY_OPS interface evolution. These patterns represent the aspirational direction for post-v1 keyboard-driven workflow.</p>
+  </div>
+
+  <h3>Key Findings</h3>
+  <ul>
+    <li><strong>Bloomberg&rsquo;s Launchpad model:</strong> Users compose custom dashboards from standard panel types. Each panel has a consistent title bar, data density, and keyboard shortcut layer.</li>
+    <li><strong>Keyboard-first workflow:</strong> Professional traders rarely use mice. All critical actions are bound to function keys and shortcut chords. The keyboard is the primary input device.</li>
+    <li><strong>Information density over simplicity:</strong> Bloomberg displays 200+ data points on a single screen. Novice-friendliness is sacrificed for expert efficiency. Our game should trend this direction.</li>
+    <li><strong>Color discipline:</strong> Red/green for direction, amber for alerts, white for neutral data. Bloomberg uses no decorative color. We follow the same principle.</li>
+    <li><strong>Panel composition:</strong> Users can tile, stack, and link panels. A click in one panel filters data in linked panels. This cross-referencing model maps to our lot/portfolio/market panels.</li>
+  </ul>
+
+  <h3>Proposed F-Key Layout</h3>
+  <div class="terminal-embed">
+    <div class="term-header">Keyboard Map &mdash; Function Row</div>
+    <div class="term-row"><span class="t-red t-bold">ESC</span>    CANCEL / CLOSE PANEL</div>
+    <div class="term-row"><span class="t-blue t-bold">F1</span>     BUY &mdash; place bid on selected lot</div>
+    <div class="term-row"><span class="t-blue t-bold">F2</span>     SELL &mdash; list portfolio item at market</div>
+    <div class="term-row"><span class="t-bold">F3</span>     PORT &mdash; toggle portfolio panel</div>
+    <div class="term-row"><span class="t-amber t-bold">F4</span>     ENSHRINE &mdash; lock relic (irreversible)</div>
+    <div class="term-row"><span class="t-dim">F5</span>     MARKET &mdash; market overview panel</div>
+    <div class="term-row"><span class="t-dim">F6</span>     HIST &mdash; transaction history</div>
+    <div class="term-row"><span class="t-dim">F7</span>     INTEL &mdash; AI collector intelligence</div>
+    <div class="term-row"><span class="t-dim">F8</span>     ALERT &mdash; price alert configuration</div>
+    <div class="term-row"><span class="t-green t-bold">GO</span>     CONFIRM / EXECUTE (Enter key)</div>
+    <div class="term-row"></div>
+    <div class="term-row"><span class="t-dim">NUM 1&ndash;9  Quick-bid amounts (1x, 2x, 4x, 8x, 16x, 32x, 64x base)</span></div>
+    <div class="term-row"><span class="t-dim">TAB      Cycle between active lots</span></div>
+    <div class="term-row"><span class="t-dim">SPACE    Toggle lot detail / compact view</span></div>
+  </div>
+
+  <h3>Adaptation Principles</h3>
+  <ul>
+    <li>Start with mouse-friendly UI, progressively reveal keyboard shortcuts as players advance</li>
+    <li>F-key labels should appear on-screen in the top bar, Bloomberg-style, with color-coded borders</li>
+    <li>Panel linking (click lot &rarr; sidebar updates) is the minimum viable Launchpad pattern</li>
+    <li>Consider a future &ldquo;Launchpad mode&rdquo; where players can rearrange and resize panels</li>
+  </ul>
+</div>
+
+<!-- APPENDIX E — TRADING REDESIGN -->
+<hr>
+<div class="section" id="re">
+  <div class="section-num">Appendix E <span class="status-badge core">CORE VISION</span></div>
+  <h2 class="section-title">Trading Redesign</h2>
+
+  <div class="callout">
+    <div class="callout-label">Document Status</div>
+    <p>This is the central design document for the v1.0 trading system. It defines the sell-vs-enshrine mechanic, the 4-phase market day, and the scoring model. All other design decisions flow from this document.</p>
+  </div>
+
+  <div class="pull-quote">
+    <p>&ldquo;The core tension is not buy-vs-pass. It is sell-vs-enshrine &mdash; do you cash out for immediate gain, or lock the relic into your permanent collection for scoring power?&rdquo;</p>
+  </div>
+
+  <h3>The Sell-vs-Enshrine Decision</h3>
+  <p>When a player wins an auction, the relic enters their <strong>portfolio</strong> (liquid inventory). From the portfolio, the player has two options:</p>
+  <ul>
+    <li><strong>Sell:</strong> List the relic on the open market at current market price. Generates immediate currency. The relic is gone.</li>
+    <li><strong>Enshrine:</strong> Lock the relic into the permanent collection. No currency return. The relic contributes to the final devotion score via set bonuses, rarity multipliers, and provenance chains.</li>
+  </ul>
+
+  <h3>4-Phase Market Day</h3>
+  <table>
+    <thead><tr><th>Phase</th><th>Duration</th><th>Activity</th><th>Market Behavior</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Dawn</strong></td><td>60s</td><td>New lots revealed, market opens</td><td>Low volatility, discovery pricing</td></tr>
+      <tr><td><strong>Midday</strong></td><td>90s</td><td>Peak auction activity</td><td>High volume, competitive bidding</td></tr>
+      <tr><td><strong>Vespers</strong></td><td>60s</td><td>Final auctions, enshrine window</td><td>Rising volatility, last-chance energy</td></tr>
+      <tr><td><strong>Compline</strong></td><td>30s</td><td>Market closed, scoring</td><td>No trading, devotion calculated</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Scoring Formula</h3>
+  <table>
+    <thead><tr><th>Component</th><th>Formula</th><th>Max Contribution</th></tr></thead>
+    <tbody>
+      <tr><td>Base Devotion</td><td>Sum of enshrined relic devotion values</td><td class="num">~40%</td></tr>
+      <tr><td>Set Bonus</td><td>Complete saint set &times; 1.5 multiplier</td><td class="num">~25%</td></tr>
+      <tr><td>Provenance Chain</td><td>Linked authentication bonuses</td><td class="num">~15%</td></tr>
+      <tr><td>Rarity Premium</td><td>Class I: 3x, Class II: 1.5x, Class III: 1x</td><td class="num">~10%</td></tr>
+      <tr><td>Treasury Bonus</td><td>Remaining currency &times; 0.1</td><td class="num">~10%</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Design Goals</h3>
+  <ul>
+    <li>Every auction win should trigger a meaningful decision (sell or enshrine)</li>
+    <li>Currency is a tool, not a score &mdash; hoarding cash yields diminishing returns</li>
+    <li>The 4-phase day creates natural pacing with escalating urgency</li>
+    <li>AI collectors create price pressure that makes sell timing matter</li>
+    <li>Set collection creates long-term strategy across multiple market days</li>
+  </ul>
+</div>
+
+<!-- APPENDIX F — EXPERT ROUNDTABLE SYNTHESIS -->
+<hr>
+<div class="section" id="rf">
+  <div class="section-num">Appendix F <span class="status-badge current">SYNTHESIS</span></div>
+  <h2 class="section-title">Expert Roundtable Synthesis</h2>
+
+  <div class="callout">
+    <div class="callout-label">Document Status</div>
+    <p>Synthesis of a multi-perspective design roundtable covering game economy, UX architecture, and market simulation. Eight consensus points emerged alongside key disagreements documented below.</p>
+  </div>
+
+  <div class="pull-quote">
+    <p>&ldquo;HOLY_OPS sits at the intersection of incremental-game dopamine and financial-terminal competence fantasy &mdash; the trick is making the complexity feel earned rather than imposed.&rdquo;</p>
+  </div>
+
+  <h3>Eight Consensus Points</h3>
+  <ol>
+    <li><strong>Sell-vs-enshrine is the right core tension.</strong> It creates an irreversible, emotionally weighted decision at the heart of every auction win.</li>
+    <li><strong>The 3-column layout is correct.</strong> Ticker (left), grid (center), sidebar (right) mirrors professional terminal conventions and should not change.</li>
+    <li><strong>AI collectors need visible personalities.</strong> Named agents with predictable-but-exploitable bidding patterns make the market feel alive.</li>
+    <li><strong>Heresy events should differentiate by sect.</strong> Iconoclast, Gnostic, and Arian heresies should produce mechanically distinct market disruptions.</li>
+    <li><strong>Starting currency should decrease from v0.1.</strong> &#9670;3,000 forces tighter resource management than &#9670;5,000 and makes early trades consequential.</li>
+    <li><strong>The terminal aesthetic is a competitive advantage.</strong> No other casual game looks like a Bloomberg terminal. Lean into it.</li>
+    <li><strong>Sound design is critical.</strong> Terminal beeps, ticker sounds, and heresy alarms create the &ldquo;ops room&rdquo; feeling that screenshots cannot convey.</li>
+    <li><strong>Session length should target 8&ndash;12 minutes.</strong> Long enough for strategy, short enough for mobile sessions.</li>
+  </ol>
+
+  <h3>Key Disagreements</h3>
+  <table>
+    <thead><tr><th>Topic</th><th>Position A</th><th>Position B</th><th>Resolution</th></tr></thead>
+    <tbody>
+      <tr><td>Tutorial approach</td><td>Guided overlay with steps</td><td>Learn by doing, minimal UI</td><td>Guided first session, then remove</td></tr>
+      <tr><td>Enshrine reversibility</td><td>Permanent lock (higher stakes)</td><td>Costly un-enshrine option</td><td>Permanent &mdash; the tension is the point</td></tr>
+      <tr><td>AI difficulty</td><td>Fixed difficulty curve</td><td>Adaptive to player skill</td><td>Fixed but with personality variance</td></tr>
+      <tr><td>Market day count</td><td>Single day per session</td><td>3-day arc with carry-over</td><td>Single day for v1, arc for v2</td></tr>
+      <tr><td>Leaderboard scope</td><td>Global leaderboard</td><td>Friends-only comparison</td><td>Both, with daily/weekly/all-time</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- APPENDIX G — GAMEPLAY RESEARCH -->
+<hr>
+<div class="section" id="rg">
+  <div class="section-num">Appendix G <span class="status-badge current">CURRENT</span></div>
+  <h2 class="section-title">Gameplay Research</h2>
+
+  <div class="callout">
+    <div class="callout-label">Document Status</div>
+    <p>Friction analysis and parameter tuning findings from playtesting the v0.1 build. These findings directly informed the parameter changes documented in Appendix A and the redesign in Appendix E.</p>
+  </div>
+
+  <h3>Friction Analysis &mdash; V0.1</h3>
+  <ul>
+    <li><strong>Bid feedback was too slow.</strong> Players did not know if their bid was winning or losing until the lot resolved. Fix: real-time bid status indicators (winning/outbid/leading).</li>
+    <li><strong>Too many simultaneous lots.</strong> 18 initial lots overwhelmed new players. Most ignored 60%+ of the grid. Fix: reduce to 12, introduce lots progressively.</li>
+    <li><strong>No sell mechanic meant no recovery.</strong> A bad early bid was permanently punishing. Players felt trapped. Fix: portfolio + sell system.</li>
+    <li><strong>Heresy events were confusing.</strong> Players did not understand why their screen froze. Fix: clear pre-event warning, sect identification, and countdown timer.</li>
+    <li><strong>End state was abrupt.</strong> Running out of money ended the game instantly. Fix: market day phases with defined closing sequence.</li>
+    <li><strong>Collection had no payoff.</strong> Winning relics had no mechanical benefit. Fix: devotion scoring, set bonuses, enshrine system.</li>
+  </ul>
+
+  <h3>Parameter Tuning</h3>
+  <table>
+    <thead><tr><th>Parameter</th><th>V0.1</th><th>Recommended</th><th>Rationale</th></tr></thead>
+    <tbody>
+      <tr><td>Starting Currency</td><td class="num">&#9670; 5,000</td><td class="num">&#9670; 3,000</td><td>Forces trade-offs from first bid</td></tr>
+      <tr><td>Initial Lots</td><td class="num">18</td><td class="num">12</td><td>Reduces cognitive load</td></tr>
+      <tr><td>Max Lots</td><td class="num">30</td><td class="num">20</td><td>Keeps grid scannable</td></tr>
+      <tr><td>Lot Duration</td><td>45&ndash;150s</td><td>30&ndash;90s</td><td>Tighter pacing, more urgency</td></tr>
+      <tr><td>Heresy Chance</td><td class="num">35%</td><td class="num">25%</td><td>Less frustration, more strategic</td></tr>
+      <tr><td>Heresy Freeze</td><td class="num">4,000ms</td><td class="num">3,000ms</td><td>Shorter disruption, faster recovery</td></tr>
+      <tr><td>Bid Increment</td><td class="num">10%</td><td class="num">5%</td><td>Finer price control</td></tr>
+      <tr><td>AI Bid Delay</td><td>1&ndash;3s</td><td>2&ndash;5s</td><td>More time for player reaction</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Key Bugs Found</h3>
+  <table>
+    <thead><tr><th>Bug</th><th>Severity</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>BSP layout produces zero-width cells at extreme aspect ratios</td><td class="dim">Medium</td><td>Fixed &mdash; minimum cell constraint added</td></tr>
+      <tr><td>Heresy freeze timer desyncs from visual countdown</td><td class="dim">High</td><td>Fixed &mdash; timer unified to requestAnimationFrame</td></tr>
+      <tr><td>Rapid bid clicks create duplicate bid entries</td><td class="dim">High</td><td>Fixed &mdash; debounce added at 200ms</td></tr>
+      <tr><td>Terminal feed overflows on narrow viewports</td><td class="dim">Low</td><td>Fixed &mdash; overflow-x scroll added</td></tr>
+      <tr><td>Collection panel does not update after heresy clears</td><td class="dim">Medium</td><td>Open &mdash; requires state refactor</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- APPENDIX H — FUTURES PANEL RESEARCH -->
+<hr>
+<div class="section" id="rh">
+  <div class="section-num">Appendix H <span class="status-badge future">FUTURE-FACING</span></div>
+  <h2 class="section-title">Futures Panel Research</h2>
+
+  <div class="callout">
+    <div class="callout-label">Document Status</div>
+    <p>Exploration of six expansion concepts that extend the HOLY_OPS economy beyond the core auction loop. These are post-v1 features documented here for reference and prioritization.</p>
+  </div>
+
+  <h3>Expansion Concepts</h3>
+
+  <h4>1. Souls Futures Market</h4>
+  <p>Players trade futures contracts on saint devotion indices. A &ldquo;St. Catherine Futures&rdquo; contract pays out if Catherine-tagged relics appreciate during the session. Creates a meta-layer of speculation on top of the auction.</p>
+
+  <h4>2. Doctrine Deployment</h4>
+  <p>Players spend influence points to enact temporary market rules &mdash; banning a relic class, boosting a saint&rsquo;s value, or triggering a targeted heresy. A governance mechanic that makes players complicit in market manipulation.</p>
+
+  <h4>3. Obol Currency Exchange</h4>
+  <p>Multiple in-game currencies (Obols, Denarii, Florins) with fluctuating exchange rates. Players must convert between currencies to bid on regionally-tagged lots, adding a forex layer to the trading loop.</p>
+
+  <h4>4. Indulgence Index</h4>
+  <p>A synthetic index tracking overall market piety. High piety = stable prices, low piety = volatile markets. Players can buy index-linked instruments to hedge against market-wide heresy events.</p>
+
+  <h4>5. Pilgrimage Route Intelligence</h4>
+  <p>A map panel showing relic supply chains from origin sites to market. Disruptions along routes (banditry, plague, schism) reduce supply and spike prices for affected relics. Players with route intelligence can front-run supply shocks.</p>
+
+  <h4>6. Schism Risk Index</h4>
+  <p>A real-time gauge measuring the probability of a market-splitting schism event. When the index hits critical levels, the market bifurcates into competing exchanges with different price feeds. Players must choose a side.</p>
+
+  <h3>Merit Futures Panel Mockup</h3>
+  <div class="terminal-embed">
+    <div class="term-header">Souls Futures &mdash; Active Contracts</div>
+    <div class="term-row"><span class="t-dim">CONTRACT            STRIKE    EXPIRY     BID      ASK      LAST     CHG</span></div>
+    <div class="term-row"><span class="t-bold">CATH-FUT-01</span>     <span class="t-amber">&#9670;420</span>    <span class="t-dim">VESPERS</span>    <span class="t-green">&#9670;445</span>   <span class="t-green">&#9670;452</span>   <span class="t-green">&#9670;448</span>   <span class="t-green">+6.7%</span></div>
+    <div class="term-row"><span class="t-bold">FRAN-FUT-01</span>     <span class="t-amber">&#9670;310</span>    <span class="t-dim">VESPERS</span>    <span class="t-red">&#9670;285</span>   <span class="t-red">&#9670;292</span>   <span class="t-red">&#9670;288</span>   <span class="t-red">-7.1%</span></div>
+    <div class="term-row"><span class="t-bold">THOM-FUT-01</span>     <span class="t-amber">&#9670;560</span>    <span class="t-dim">COMPLINE</span>   <span class="t-green">&#9670;572</span>   <span class="t-green">&#9670;580</span>   <span class="t-green">&#9670;575</span>   <span class="t-green">+2.7%</span></div>
+    <div class="term-row"><span class="t-bold">HELE-FUT-01</span>     <span class="t-amber">&#9670;190</span>    <span class="t-dim">VESPERS</span>    <span class="t-dim">&#9670;188</span>   <span class="t-dim">&#9670;195</span>   <span class="t-dim">&#9670;190</span>   <span class="t-dim">+0.0%</span></div>
+    <div class="term-row"></div>
+    <div class="term-row"><span class="t-dim">OPEN INTEREST: 47 contracts</span>    <span class="t-dim">VOLUME: &#9670;14,320</span>    <span class="t-dim">MARGIN REQ: 20%</span></div>
+  </div>
+
+  <h3>Prioritization Notes</h3>
+  <ul>
+    <li><strong>V1.5 candidates:</strong> Souls Futures, Indulgence Index (leverage existing pricing engine)</li>
+    <li><strong>V2.0 candidates:</strong> Doctrine Deployment, Pilgrimage Routes (require new systems)</li>
+    <li><strong>V3.0 candidates:</strong> Obol Exchange, Schism Risk (full economy rework)</li>
+  </ul>
+</div>
+
+<!-- APPENDIX I — TRAILER CREATIVE BRIEF -->
+<hr>
+<div class="section" id="ri">
+  <div class="section-num">Appendix I <span class="status-badge current">CURRENT</span></div>
+  <h2 class="section-title">Trailer Creative Brief</h2>
+
+  <div class="callout">
+    <div class="callout-label">Document Status</div>
+    <p>Creative direction for the HOLY_OPS.EXE reveal trailer. Defines the 3-clip storyboard structure, sound design specifications, and technical requirements for production.</p>
+  </div>
+
+  <h3>3-Clip Storyboard</h3>
+
+  <h4>Clip 1 &mdash; &ldquo;The Terminal Awakens&rdquo; (0:00&ndash;0:12)</h4>
+  <p>Black screen. A cursor blinks. Characters type themselves: <code>HOLY_OPS.EXE</code>. The terminal boots &mdash; scan lines sweep, color tokens activate one by one (amber, green, red). The 3-column layout assembles itself in real time. A single lot appears in the grid. The ticker begins scrolling.</p>
+
+  <h4>Clip 2 &mdash; &ldquo;The Auction Floor&rdquo; (0:12&ndash;0:32)</h4>
+  <p>Full gameplay at speed. Lots populate the grid. Bids fly in from AI collectors. The player places a bid &mdash; the cell flashes green (winning). An AI outbids &mdash; the cell pulses red. A heresy event triggers: the screen distorts, amber warnings blink, a 3-second freeze. Recovery. The player wins a Class I relic. The portfolio panel updates. The enshrine decision appears.</p>
+
+  <h4>Clip 3 &mdash; &ldquo;The Collection&rdquo; (0:32&ndash;0:45)</h4>
+  <p>Slow zoom into the collection panel. Enshrined relics glow softly. A complete saint set triggers a cascade animation &mdash; devotion score climbs. The final score appears in large monospaced type. The tagline types itself: <code>ACQUIRE. AUTHENTICATE. ENSHRINE.</code> End card with release date.</p>
+
+  <h3>Sound Design Spec</h3>
+  <table>
+    <thead><tr><th>Moment</th><th>Sound</th><th>Reference</th></tr></thead>
+    <tbody>
+      <tr><td>Terminal boot</td><td>CRT power-on hum + digital chirp sequence</td><td>Bloomberg terminal startup</td></tr>
+      <tr><td>Bid placed</td><td>Mechanical key click + soft confirmation tone</td><td>Trading floor order entry</td></tr>
+      <tr><td>Outbid alert</td><td>Short descending two-tone + subtle static</td><td>Exchange rejection beep</td></tr>
+      <tr><td>Heresy event</td><td>Low drone + distorted church bell + static burst</td><td>Emergency broadcast tone</td></tr>
+      <tr><td>Auction win</td><td>Rising three-tone chime + ticker acceleration</td><td>Trade confirmation bell</td></tr>
+      <tr><td>Enshrine lock</td><td>Deep resonant gong + glass harmonica sustain</td><td>Cathedral consecration</td></tr>
+      <tr><td>Set completion</td><td>Cascading chime sequence + choir swell</td><td>Achievement unlock + sacred music</td></tr>
+      <tr><td>Final score</td><td>All sound fades to single sustained organ note</td><td>Liturgical resolution</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Production Specs</h3>
+  <table>
+    <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Duration</td><td>45 seconds</td></tr>
+      <tr><td>Resolution</td><td>1920&times;1080 (16:9)</td></tr>
+      <tr><td>Frame Rate</td><td>60fps</td></tr>
+      <tr><td>Format</td><td>MP4 (H.264) + WebM fallback</td></tr>
+      <tr><td>Audio</td><td>Stereo, 48kHz, -14 LUFS integrated</td></tr>
+      <tr><td>Capture Method</td><td>In-engine screen recording with UI overlay</td></tr>
+      <tr><td>Color Profile</td><td>sRGB, matched to terminal register tokens</td></tr>
+      <tr><td>Text Rendering</td><td>Subpixel AA disabled (pixel-sharp mono text)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FOOTER -->
+<div class="doc-footer">
+  <span>PCSAI-GDD-2026-002 REV 1.0</span>
+  <span>RESTRICTED &mdash; PONTIFICAL COMMISSION ON SACRED ASSET INFRASTRUCTURE</span>
+</div>
+
+</div><!-- end .main -->
+
+<!-- ============================================================
+     SCROLL SPY (minimal JS for sidebar active states)
+     ============================================================ -->
+<script>
+(function() {
+  const links = document.querySelectorAll('.sidebar a[href^="#s"]');
+  const sections = [];
+  links.forEach(link => {
+    const id = link.getAttribute('href').slice(1);
+    const el = document.getElementById(id);
+    if (el) sections.push({ id, el, link });
+  });
+
+  function update() {
+    let current = sections[0];
+    const scrollTop = window.scrollY + 120;
+    for (const s of sections) {
+      if (s.el.offsetTop <= scrollTop) current = s;
+    }
+    links.forEach(l => l.style.color = '');
+    if (current) current.link.style.color = '#F0F0F2';
+  }
+
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+
+</body>
+</html>

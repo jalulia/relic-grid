@@ -73,3 +73,56 @@ export function generateSystemMessage(counter: number): HerasyReport {
     timestamp: Date.now(),
   };
 }
+
+// ── SECT-SPECIFIC MARKET EFFECTS ──
+
+export interface SectEffect {
+  sectId: string;
+  sectName: string;
+  affectedSaints: string[];
+  sentimentDelta: number;
+  classEffects: Record<number, number>; // relicClass → modifier delta
+  duration: number; // ms
+}
+
+const SECT_EFFECTS: Record<string, SectEffect> = {
+  flagellant: {
+    sectId: 'flagellant', sectName: 'FLAGELLANTS',
+    affectedSaints: ['sebastian', 'francis'],
+    sentimentDelta: 0.20,
+    classEffects: {},
+    duration: 6000,
+  },
+  cathar: {
+    sectId: 'cathar', sectName: 'CATHARI',
+    affectedSaints: ['catherine', 'teresa'],
+    sentimentDelta: -0.20,
+    classEffects: {},
+    duration: 8000,
+  },
+  gnostic: {
+    sectId: 'gnostic', sectName: 'GNOSTIC ORDER',
+    affectedSaints: ['ambrose'],
+    sentimentDelta: 0.15,
+    classEffects: {},
+    duration: 7000,
+  },
+  bogomil: {
+    sectId: 'bogomil', sectName: 'BOGOMILS',
+    affectedSaints: [],
+    sentimentDelta: 0,
+    classEffects: { 3: -0.25 },
+    duration: 10000,
+  },
+  waldensian: {
+    sectId: 'waldensian', sectName: 'WALDENSIANS',
+    affectedSaints: [],
+    sentimentDelta: 0,
+    classEffects: { 1: -0.10, 2: 0.15 },
+    duration: 9000,
+  },
+};
+
+export function getSectEffect(sectId: string): SectEffect | null {
+  return SECT_EFFECTS[sectId] ?? null;
+}

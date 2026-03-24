@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOLY_OPS.EXE — Relic Exchange Terminal GDD</title>
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --white: #FFFFFF;
+  --bg: #FAFAFA;
+  --black: #0A0A0A;
+  --grey-100: #F2F2F2;
+  --grey-200: #E0E0E0;
+  --grey-400: #999;
+  --grey-600: #666;
+  --red: #e73c0e;
+  --red-dark: #c43009;
+  --gold: #D4A843;
+  --gold-dim: #8B7335;
+  --terminal-green: #4ADE80;
+  --terminal-blue: #3B82F6;
+
+  --sidebar-w: 200px;
+  --content-max: 720px;
+  --pad: 48px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { background: var(--white); }
+
+body {
+  background: var(--white);
+  color: var(--black);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  line-height: 1.85;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection { background: var(--red); color: #fff; }
+
+/* ========================================
+   NAV
+   ======================================== */
+nav {
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--black);
+  padding: 32px 0;
+  overflow-y: auto;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+nav::-webkit-scrollbar { width: 0; }
+
+.nav-logo {
+  font-family: 'Pirata One', cursive;
+  font-weight: 400;
+  font-size: 16px;
+  color: #fff;
+  letter-spacing: 0.01em;
+  padding: 0 24px 8px;
+}
+.nav-sub {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold);
+  padding: 0 24px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.nav-group { padding-top: 20px; }
+
+.nav-label {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--red);
+  padding: 0 24px 8px;
+}
+
+nav a {
+  display: block;
+  padding: 3px 24px;
+  padding-left: 22px;
+  color: rgba(255,255,255,0.35);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 400;
+  transition: all 0.2s ease;
+  border-left: 2px solid transparent;
+}
+nav a:hover {
+  color: #fff;
+  border-left-color: var(--red);
+  padding-left: 26px;
+}
+
+.nav-spacer { flex: 1; }
+
+.nav-footer {
+  padding: 16px 24px 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-size: 9px;
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 1px;
+}
+
+/* ========================================
+   MAIN
+   ======================================== */
+main {
+  margin-left: var(--sidebar-w);
+}
+
+.content {
+  max-width: var(--content-max);
+  padding: 0 var(--pad);
+}
+
+/* ========================================
+   COVER
+   ======================================== */
+.cover {
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding: 72px var(--pad);
+  overflow: hidden;
+  background: var(--black);
+}
+.cover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(59,130,246,0.03) 2px,
+      rgba(59,130,246,0.03) 3px
+    );
+  pointer-events: none;
+}
+.cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(10,10,10,0.95) 0%, rgba(10,10,10,0.6) 50%, rgba(10,10,10,0.85) 100%);
+  pointer-events: none;
+}
+.cover-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  background-image:
+    linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+}
+.cover-content {
+  position: relative;
+  z-index: 1;
+  max-width: var(--content-max);
+}
+.cover-exe {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 16px;
+  display: block;
+}
+.cover-title {
+  font-family: 'Pirata One', cursive;
+  font-weight: 400;
+  font-size: clamp(56px, 12vw, 120px);
+  line-height: 0.92;
+  color: #fff;
+  letter-spacing: 0.01em;
+  margin-bottom: 8px;
+}
+.cover-title span {
+  display: block;
+  color: var(--red);
+}
+.cover-terminal {
+  font-size: 11px;
+  color: rgba(59,130,246,0.6);
+  margin-bottom: 28px;
+  letter-spacing: 1px;
+}
+.cover-rule {
+  width: 80px;
+  height: 3px;
+  background: var(--red);
+  margin-bottom: 20px;
+}
+.cover-sub {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 32px;
+}
+.cover-meta {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  line-height: 2;
+}
+.cover-meta strong {
+  color: var(--gold);
+  font-weight: 500;
+}
+.cover-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  background: var(--gold);
+  animation: blink 1s step-end infinite;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* ========================================
+   SECTIONS
+   ======================================== */
+.section {
+  padding: 80px 0 0;
+  position: relative;
+}
+.section[data-num]::before {
+  content: attr(data-num);
+  position: absolute;
+  top: 48px;
+  right: -20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 300;
+  font-size: 160px;
+  color: rgba(0,0,0,0.03);
+  line-height: 1;
+  pointer-events: none;
+  letter-spacing: -0.05em;
+}
+
+.section-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 8px;
+  display: block;
+}
+
+h2 {
+  font-family: 'Pirata One', cursive;
+  font-weight: 400;
+  font-size: clamp(30px, 5vw, 48px);
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  color: var(--black);
+  margin-bottom: 24px;
+}
+
+h3 {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--black);
+  margin-top: 48px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--black);
+}
+
+h4 {
+  font-family: 'Instrument Serif', serif;
+  font-size: 18px;
+  color: var(--black);
+  margin-top: 28px;
+  margin-bottom: 8px;
+}
+
+p { margin-bottom: 16px; }
+strong { font-weight: 600; }
+
+.lead {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1.5;
+  color: var(--black);
+  margin-bottom: 28px;
+  max-width: 600px;
+}
+
+code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  background: var(--grey-100);
+  padding: 1px 6px;
+  color: var(--red-dark);
+}
+
+pre {
+  background: var(--black);
+  color: rgba(255,255,255,0.85);
+  padding: 24px 28px;
+  margin: 20px 0 28px;
+  font-size: 11.5px;
+  line-height: 1.9;
+  overflow-x: auto;
+  border-left: 3px solid var(--red);
+}
+pre .c { color: rgba(255,255,255,0.3); }
+pre .k { color: #F0A0A0; }
+pre .s { color: #A8DCA8; }
+pre .n { color: #F0D080; }
+pre .f { color: #A0C8E8; }
+
+/* ========================================
+   CALLOUT
+   ======================================== */
+.callout {
+  margin: 32px 0;
+  padding: 24px 28px;
+  border: 1px solid var(--grey-200);
+  border-left: 3px solid var(--red);
+  position: relative;
+}
+.callout-label {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 8px;
+  display: block;
+}
+.callout p:last-child { margin-bottom: 0; }
+
+/* Gold callout variant */
+.callout.gold {
+  border-left-color: var(--gold);
+}
+.callout.gold .callout-label {
+  color: var(--gold);
+}
+
+/* ========================================
+   PULLQUOTE
+   ======================================== */
+.pullquote {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 26px;
+  line-height: 1.45;
+  color: var(--black);
+  margin: 48px 0;
+  padding-left: 28px;
+  border-left: 3px solid var(--red);
+  max-width: 580px;
+}
+
+/* ========================================
+   TABLES
+   ======================================== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0 28px;
+  font-size: 12px;
+}
+thead th {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--red);
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--black);
+}
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--grey-100);
+  vertical-align: top;
+}
+
+/* ========================================
+   ORNAMENT
+   ======================================== */
+.orn {
+  text-align: center;
+  padding: 40px 0 0;
+  color: var(--grey-200);
+  font-size: 22px;
+  letter-spacing: 20px;
+}
+
+/* ========================================
+   FULL-BLEED ELEMENTS
+   ======================================== */
+.bleed {
+  width: calc(100% + var(--pad) * 2);
+  margin-left: calc(var(--pad) * -1);
+}
+
+/* Vermillion section */
+.verm {
+  background: var(--red);
+  color: #fff;
+  padding: 56px var(--pad);
+  margin: 48px 0;
+}
+.verm h3 { color: rgba(255,255,255,0.6); border-bottom-color: rgba(255,255,255,0.2); margin-top: 0; }
+.verm p { color: rgba(255,255,255,0.88); }
+.verm strong { color: #fff; }
+.verm code { background: rgba(0,0,0,0.2); color: #fff; }
+.verm .section-label { color: rgba(255,255,255,0.5); }
+.verm h2 { color: #fff; }
+
+/* Black section */
+.ink {
+  background: var(--black);
+  color: rgba(255,255,255,0.8);
+  padding: 56px var(--pad);
+  margin: 48px 0;
+  max-width: 100%;
+}
+.ink > * { max-width: var(--content-max); }
+.ink > table { max-width: min(var(--content-max), 100%); }
+.ink h3 { color: var(--red); border-bottom-color: rgba(255,255,255,0.1); margin-top: 0; }
+.ink strong { color: #fff; }
+.ink code { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.9); }
+.ink table thead th { border-bottom-color: rgba(255,255,255,0.15); }
+.ink table td { border-bottom-color: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); }
+.ink table td strong { color: #fff; }
+.ink .section-label { color: var(--red); }
+.ink h2 { color: #fff; }
+.ink .lead { color: rgba(255,255,255,0.7); }
+.ink pre { border-left-color: var(--red); }
+.ink .callout { border-color: rgba(255,255,255,0.1); }
+.ink .callout p { color: rgba(255,255,255,0.7); }
+
+/* Gold ink variant */
+.ink-gold {
+  background: #1a1708;
+  color: rgba(255,255,255,0.8);
+  padding: 56px var(--pad);
+  margin: 48px 0;
+  max-width: 100%;
+}
+.ink-gold > * { max-width: var(--content-max); }
+.ink-gold h3 { color: var(--gold); border-bottom-color: rgba(212,168,67,0.15); margin-top: 0; font-size: 9px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px; padding-bottom: 8px; }
+.ink-gold strong { color: var(--gold); }
+.ink-gold .section-label { color: var(--gold); font-size: 9px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 8px; display: block; }
+.ink-gold h2 { color: #fff; font-family: 'Pirata One', cursive; font-weight: 400; font-size: clamp(30px, 5vw, 48px); line-height: 1.1; letter-spacing: 0.01em; margin-bottom: 24px; }
+.ink-gold .lead { color: rgba(255,255,255,0.6); font-family: 'Instrument Serif', serif; font-style: italic; font-size: 22px; line-height: 1.5; margin-bottom: 28px; max-width: 600px; }
+.ink-gold table { width: 100%; border-collapse: collapse; margin: 16px 0 28px; font-size: 12px; }
+.ink-gold table thead th { font-size: 9px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); text-align: left; padding: 10px 12px; border-bottom: 2px solid rgba(212,168,67,0.3); }
+.ink-gold table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.5); vertical-align: top; }
+.ink-gold table td strong { color: #fff; }
+.ink-gold code { background: rgba(212,168,67,0.1); color: var(--gold); font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 1px 6px; }
+.ink-gold p { margin-bottom: 16px; }
+
+/* ========================================
+   FLOW DIAGRAM
+   ======================================== */
+.flow { display: flex; align-items: center; gap: 6px; margin: 28px 0; flex-wrap: wrap; }
+.flow-s {
+  padding: 8px 14px;
+  font-size: 9px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+  border: 1px solid var(--black); color: var(--black);
+}
+.flow-s.on { background: var(--red); color: #fff; border-color: var(--red); }
+.flow-s.gold { background: var(--gold); color: var(--black); border-color: var(--gold); }
+.flow-a { color: var(--grey-400); font-size: 16px; }
+
+/* ========================================
+   SAINT ROSTER (for auction game)
+   ======================================== */
+.saint-card {
+  padding: 28px;
+  margin: 20px 0;
+  border: 1px solid var(--grey-200);
+  position: relative;
+}
+.saint-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 4px;
+}
+.sc-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.sc-name {
+  font-family: 'Pirata One', cursive;
+  font-weight: 400;
+  font-size: 22px;
+  letter-spacing: 0.01em;
+}
+.sc-key {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--grey-400);
+}
+.sc-vibe {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--grey-600);
+  margin-bottom: 12px;
+}
+.sc-hagio {
+  font-size: 12px;
+  line-height: 1.8;
+  margin-bottom: 12px;
+}
+.sc-relics {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  margin-top: 16px;
+}
+.sc-relic {
+  padding: 10px 12px;
+  border: 1px solid var(--grey-100);
+  margin: -0.5px;
+}
+.sc-relic-name {
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+.sc-relic-desc {
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--grey-600);
+  margin-top: 2px;
+}
+
+/* Ink variant for saint cards */
+.ink .saint-card { border-color: rgba(255,255,255,0.1); }
+.ink .sc-key { color: rgba(255,255,255,0.35); }
+.ink .sc-vibe { color: rgba(255,255,255,0.5); }
+.ink .sc-hagio { color: rgba(255,255,255,0.65); }
+.ink .sc-relics { }
+.ink .sc-relic { border-color: rgba(255,255,255,0.06); }
+.ink .sc-relic-name { color: #fff; }
+.ink .sc-relic-desc { color: rgba(255,255,255,0.4); }
+
+/* ========================================
+   SIGNAL CHAIN (for game systems)
+   ======================================== */
+.chain-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+.chain-n {
+  padding: 7px 14px; font-size: 10px;
+  border: 1px solid var(--grey-200); color: var(--grey-600);
+}
+.chain-n.on { border-color: var(--red); color: var(--red); font-weight: 600; }
+.chain-a { color: var(--grey-400); font-size: 14px; }
+
+/* ========================================
+   WIREFRAME
+   ======================================== */
+.wf-wrap {
+  background: var(--white);
+  border: 1px solid var(--grey-200);
+  padding: 32px;
+  margin: 24px 0;
+  position: relative;
+}
+.wf-tag {
+  position: absolute;
+  top: -8px; left: 16px;
+  background: var(--white);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--grey-400);
+  padding: 0 8px;
+}
+.wf-screens { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+.wf-col { text-align: center; }
+.wf-label { font-size: 9px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--grey-400); margin-bottom: 8px; }
+.wf-panel {
+  border: 2px solid var(--black);
+  background: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.wf-b {
+  border: 1px dashed #D0D0D0;
+  position: absolute;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 7px; text-transform: uppercase; letter-spacing: 0.3px; color: #AAA;
+}
+.wf-b.f { background: var(--grey-100); }
+.wf-b.d { background: var(--black); color: #fff; }
+.wf-b.r { background: var(--red); color: #fff; opacity: 0.8; }
+.wf-b.g { background: var(--gold); color: var(--black); opacity: 0.6; }
+
+/* ========================================
+   HERESY SECT BADGE
+   ======================================== */
+.sect-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 4px 4px 4px 0;
+}
+
+/* ========================================
+   STATUS DOT
+   ======================================== */
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ========================================
+   FOOTER
+   ======================================== */
+.footer {
+  text-align: center;
+  padding: 80px var(--pad);
+  font-size: 9px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--grey-400);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 1000px) {
+  nav { display: none; }
+  main { margin-left: 0; }
+  .cover { padding: 48px 24px; }
+  .content { padding: 0 24px; }
+  .bleed { width: calc(100% + 48px); margin-left: -24px; }
+  .verm, .ink, .ink-gold { padding: 40px 24px; }
+}
+@media (max-width: 600px) {
+  .sc-relics { grid-template-columns: 1fr; }
+  .wf-screens { flex-direction: column; align-items: center; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Holy Ops</div>
+  <div class="nav-sub">Relic Exchange Terminal</div>
+  <div class="nav-group">
+    <div class="nav-label">Overview</div>
+    <a href="#concept">Concept</a>
+    <a href="#loop">Core Loop</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">Entities</div>
+    <a href="#entities">Game Objects</a>
+    <a href="#saints">The Saints</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">Systems</div>
+    <a href="#auction">Auction Mechanics</a>
+    <a href="#ai">AI Bidding</a>
+    <a href="#heresy">Heresy System</a>
+    <a href="#economy">Economy</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">Interface</div>
+    <a href="#layout">Layout</a>
+    <a href="#grid">The Grid</a>
+    <a href="#components">Components</a>
+    <a href="#tutorial">Tutorial</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">Design</div>
+    <a href="#visual">Visual System</a>
+    <a href="#animation">Animation</a>
+    <a href="#audio">Audio</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">Technical</div>
+    <a href="#stack">Architecture</a>
+    <a href="#engine">Engine</a>
+    <a href="#performance">Performance</a>
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="nav-footer">GDD v0.1<br>March 2026</div>
+</nav>
+
+<main>
+
+<!-- =====================================================
+     COVER
+     ===================================================== -->
+<div class="cover">
+  <div class="cover-grid"></div>
+  <div class="cover-content">
+    <span class="cover-exe">HOLY_OPS.EXE</span>
+    <div class="cover-title">Relic<span>Exchange</span></div>
+    <div class="cover-terminal">&gt; TERMINAL v0.1 ONLINE<span class="cover-cursor"></span></div>
+    <div class="cover-rule"></div>
+    <div class="cover-sub">Game Design Document</div>
+    <div class="cover-meta">
+      <strong>Genre</strong> &ensp;Real-time strategy / auction simulator<br>
+      <strong>Platform</strong> &ensp;Browser (React + TypeScript + Vite)<br>
+      <strong>Aesthetic</strong> &ensp;Bloomberg terminal meets medieval reliquary<br>
+      <strong>Version</strong> &ensp;0.1 &mdash; March 2026
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================
+     01 CONCEPT
+     ===================================================== -->
+<div class="content">
+  <div class="section" data-num="01" id="concept">
+    <span class="section-label">01 &mdash; Concept</span>
+    <h2>The Core Idea</h2>
+    <p class="lead">You are a broker of sacred bones, teeth, and splinters &mdash; bidding against AI-driven zealots in a fictional underground relic exchange for the scattered remains of saints.</p>
+    <p><strong>HOLY_OPS.EXE</strong> is a single-player real-time auction game. Lots spawn continuously on a live grid. Player and AI bidders compete in timed auctions. Winning a lot adds the relic to your collection. Collect every relic of a saint to &ldquo;complete&rdquo; them. Budget is fixed at <strong>&diams; 5,000</strong> &mdash; no refills.</p>
+    <p>The visual language is <strong>retro terminal / Bloomberg terminal meets medieval reliquary</strong>. Everything is sharp-cornered monospace text on a deep navy-black background. Currency glows gold. Danger pulses red. The grid breathes &mdash; lots swell as they approach expiry, demanding attention.</p>
+
+    <div class="callout">
+      <span class="callout-label">The Flip</span>
+      <p>Traditional auction games give you unlimited money and a time limit. <strong>HOLY_OPS inverts this:</strong> unlimited time, finite money. The pressure isn&rsquo;t the clock &mdash; it&rsquo;s the budget. Every bid is permanent. Every overbid is currency you&rsquo;ll never get back. The game ends not with a buzzer, but with the quiet realisation that you can no longer afford anything.</p>
+    </div>
+
+    <h3>Win Condition</h3>
+    <p>Complete as many saints as possible before running out of currency. There is no formal end state &mdash; the game continues as long as there are lots to bid on and currency to spend. The goal is <strong>strategic accumulation under scarcity</strong>.</p>
+  </div>
+</div>
+
+<div class="bleed verm" id="loop">
+  <span class="section-label">02 &mdash; Experience</span>
+  <h2>Core Loop</h2>
+  <div class="flow">
+    <div class="flow-s" style="border-color:rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);">Lots Spawn</div><div class="flow-a" style="color:rgba(255,255,255,0.4);">&rarr;</div>
+    <div class="flow-s" style="background:#fff;color:var(--red);border-color:#fff;">Scan Grid</div><div class="flow-a" style="color:rgba(255,255,255,0.4);">&rarr;</div>
+    <div class="flow-s" style="background:#fff;color:var(--red);border-color:#fff;">Select Lot</div><div class="flow-a" style="color:rgba(255,255,255,0.4);">&rarr;</div>
+    <div class="flow-s" style="background:#fff;color:var(--red);border-color:#fff;">Place Bid</div><div class="flow-a" style="color:rgba(255,255,255,0.4);">&rarr;</div>
+    <div class="flow-s" style="border-color:rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);">AI Counters</div><div class="flow-a" style="color:rgba(255,255,255,0.4);">&rarr;</div>
+    <div class="flow-s" style="border-color:rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);">Win / Lose</div><div class="flow-a" style="color:rgba(255,255,255,0.4);">&rarr;</div>
+    <div class="flow-s" style="background:var(--gold);color:var(--black);border-color:var(--gold);">Collect</div>
+  </div>
+  <p><strong>1. Scan.</strong> 18 lots fill the market grid at launch. New lots spawn every 5 seconds, up to 30 active simultaneously. The BSP treemap layout gives more screen space to urgent and bid-on lots.</p>
+  <p><strong>2. Select.</strong> Click any grid cell or ticker row. The bid panel populates with lot details: relic name, saint progress, current bid, countdown timer.</p>
+  <p><strong>3. Bid.</strong> Quick-bid buttons (+10, +50, +100) or manual input. Your bid must exceed the current highest. Currency is <em>not</em> deducted until you win.</p>
+  <p><strong>4. Compete.</strong> AI bidders evaluate every 3 seconds. Their aggression escalates as lots near expiry. If outbid, the grid cell pulses red.</p>
+  <p><strong>5. Resolve.</strong> When the timer hits zero: if your bid &ge; current bid, you win. The relic joins your collection. If a saint is completed, a full-screen celebration overlay fires.</p>
+  <p><strong>6. Heresy.</strong> The terminal feed periodically reports heresy events from fictional sects. During these 4-second tribunal delays, AI bidders are frozen &mdash; a strategic window for unopposed bidding.</p>
+</div>
+
+<!-- =====================================================
+     03 ENTITIES
+     ===================================================== -->
+<div class="content">
+  <div class="section" data-num="03" id="entities">
+    <span class="section-label">03 &mdash; Entities</span>
+    <h2>Game Objects</h2>
+
+    <h3>Relic</h3>
+    <p>A single sacred artifact belonging to a saint. Classified using the Catholic relic classification system:</p>
+    <table>
+      <thead><tr><th>Class</th><th>Description</th><th>Examples</th></tr></thead>
+      <tbody>
+        <tr><td><strong>I &mdash; Body Part</strong></td><td>Physical remains of the saint</td><td>Bones, teeth, hair, blood</td></tr>
+        <tr><td><strong>II &mdash; Possession</strong></td><td>Items owned or worn by the saint</td><td>Veils, tunics, cloths</td></tr>
+        <tr><td><strong>III &mdash; Touched</strong></td><td>Items that contacted the saint or their relics</td><td>Vials of dust, ash, ampullae</td></tr>
+      </tbody>
+    </table>
+
+    <pre><span class="k">interface</span> <span class="f">Relic</span> {
+  id: <span class="s">string</span>;           <span class="c">// e.g. "ambrose-3"</span>
+  name: <span class="s">string</span>;         <span class="c">// e.g. "Third Metacarpal"</span>
+  saintId: <span class="s">string</span>;      <span class="c">// e.g. "ambrose"</span>
+  saintName: <span class="s">string</span>;    <span class="c">// e.g. "AMBROSE"</span>
+  relicClass: <span class="n">1</span> | <span class="n">2</span> | <span class="n">3</span>;
+  provenance: <span class="s">string</span>;   <span class="c">// e.g. "Basilica di Sant'Ambrogio, Milan, 1423"</span>
+  partIndex: <span class="s">number</span>;    <span class="c">// index within the saint's relic array</span>
+}</pre>
+
+    <h3>Lot</h3>
+    <p>A relic currently up for auction. The core unit of gameplay.</p>
+    <table>
+      <thead><tr><th>Status</th><th>Meaning</th><th>Visual</th></tr></thead>
+      <tbody>
+        <tr><td><strong><code>active</code></strong></td><td>Auction is live, accepting bids</td><td>Default cell border</td></tr>
+        <tr><td><strong><code>won</code></strong></td><td>Player won the auction</td><td>Gold flash, added to collection</td></tr>
+        <tr><td><strong><code>lost</code></strong></td><td>Player bid but was outbid at close</td><td>Red flash, fades out</td></tr>
+        <tr><td><strong><code>closed</code></strong></td><td>Auction ended, player didn&rsquo;t bid</td><td>Removed silently</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Saint</h3>
+    <p>A saint whose relics the player is collecting. Eight saints, each with 8&ndash;13 relics (85 total across all saints). Completing a saint requires winning every one of their relics at auction.</p>
+
+    <h3>GameState</h3>
+    <pre><span class="k">interface</span> <span class="f">GameState</span> {
+  currency: <span class="s">number</span>;              <span class="c">// remaining budget (&diams;)</span>
+  lots: <span class="f">Lot</span>[];                   <span class="c">// all lots (active + recently resolved)</span>
+  saints: <span class="f">Saint</span>[];               <span class="c">// collection progress</span>
+  completedSaint: <span class="s">string</span> | <span class="k">null</span>; <span class="c">// triggers completion overlay</span>
+  lotCounter: <span class="s">number</span>;            <span class="c">// for generating LOT IDs</span>
+}</pre>
+  </div>
+
+  <div class="orn">&bull; &bull; &bull;</div>
+</div>
+
+<!-- =====================================================
+     04 THE SAINTS (INK)
+     ===================================================== -->
+<div class="bleed ink" id="saints">
+  <span class="section-label">04 &mdash; The Roster</span>
+  <h2>Eight Saints</h2>
+  <p class="lead">Eight saints, each drawn from Catholic hagiography with a martyrdom or miracle. Each carries 8&ndash;13 relics &mdash; body parts, possessions, and contact relics thematically tied to their story. 85 relics total.</p>
+
+  <div class="saint-card" style="border-left: 4px solid #e73c0e;">
+    <div class="sc-head">
+      <div class="sc-name" style="color:#e73c0e;">I. Ambrose</div>
+      <div class="sc-key">12 Relics &mdash; Milan</div>
+    </div>
+    <div class="sc-vibe">Basilica di Sant&rsquo;Ambrogio, Milan, 4th century</div>
+    <div class="sc-hagio">Bishop of Milan, Doctor of the Church. Famous for his eloquence &mdash; legend says bees landed on his mouth as an infant, a portent of his honeyed speech. His bones were discovered in 1864 beneath the basilica altar.</div>
+    <div class="sc-relics">
+      <div class="sc-relic"><div class="sc-relic-name">Cranium</div><div class="sc-relic-desc">Skull &mdash; Class I</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Mandible</div><div class="sc-relic-desc">Jaw bone &mdash; Class I</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Third Metacarpal</div><div class="sc-relic-desc">Hand bone &mdash; Class I</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Vertebra (C3)</div><div class="sc-relic-desc">Neck bone &mdash; Class I</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Left Femur</div><div class="sc-relic-desc">Thigh bone &mdash; Class I</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Tooth</div><div class="sc-relic-desc">Molar &mdash; Class I</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Hair</div><div class="sc-relic-desc">Preserved hair strands &mdash; Class I</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Episcopal Ring</div><div class="sc-relic-desc">Bishop&rsquo;s ring &mdash; Class II</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Chasuble Fragment</div><div class="sc-relic-desc">Vestment cloth &mdash; Class II</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Bee Wax Seal</div><div class="sc-relic-desc">Sealed with hive wax &mdash; Class III</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Altar Dust</div><div class="sc-relic-desc">Dust from his altar &mdash; Class III</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Ampulla (Oil)</div><div class="sc-relic-desc">Oil from his lamp &mdash; Class III</div></div>
+    </div>
+  </div>
+
+  <div class="saint-card" style="border-left: 4px solid #D4874A;">
+    <div class="sc-head">
+      <div class="sc-name" style="color:#D4874A;">II. Lucia</div>
+      <div class="sc-key">10 Relics &mdash; Venice</div>
+    </div>
+    <div class="sc-vibe">Church of SS. Geremia e Lucia, Venice, 4th century</div>
+    <div class="sc-hagio">Martyr of Syracuse, patron saint of the blind. Her eyes were gouged out during persecution. Depicted carrying her own eyeballs on a plate. Her body was stolen from Constantinople by Venetian crusaders in 1204.</div>
+    <div class="sc-relics">
+      <div class="sc-relic"><div class="sc-relic-name">Left Eye</div><div class="sc-relic-desc">Preserved in crystal &mdash; Class I</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Right Eye</div><div class="sc-relic-desc">Preserved in crystal &mdash; Class I</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Finger Bone</div><div class="sc-relic-desc">Index finger &mdash; Class I</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Veil</div><div class="sc-relic-desc">Burial veil &mdash; Class II</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Silver Plate</div><div class="sc-relic-desc">The plate (for her eyes) &mdash; Class II</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Tunic Thread</div><div class="sc-relic-desc">Thread from garment &mdash; Class II</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Lamp Oil</div><div class="sc-relic-desc">Oil from her shrine &mdash; Class III</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Candle Wax</div><div class="sc-relic-desc">Wax from vigil candles &mdash; Class III</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Tomb Dust</div><div class="sc-relic-desc">Dust from her sarcophagus &mdash; Class III</div></div>
+      <div class="sc-relic"><div class="sc-relic-name">Pilgrim Badge</div><div class="sc-relic-desc">Medieval pilgrim token &mdash; Class III</div></div>
+    </div>
+  </div>
+
+  <div class="saint-card" style="border-left: 4px solid #C45A30;">
+    <div class="sc-head">
+      <div class="sc-name" style="color:#C45A30;">III. Sebastian</div>
+      <div class="sc-key">12 Relics &mdash; Rome</div>
+    </div>
+    <div class="sc-vibe">Basilica of San Sebastiano, Rome, 3rd century</div>
+    <div class="sc-hagio">Roman soldier martyred by archers. Tied to a post and shot so full of arrows he looked like a sea urchin &mdash; yet survived. Patron saint of soldiers, athletes, and plague sufferers.</div>
+  </div>
+
+  <div class="saint-card" style="border-left: 4px solid #B0B0B0;">
+    <div class="sc-head">
+      <div class="sc-name" style="color:#B0B0B0;">IV. Teresa</div>
+      <div class="sc-key">8 Relics &mdash; &Aacute;vila</div>
+    </div>
+    <div class="sc-vibe">Convento de Santa Teresa, &Aacute;vila, 16th century</div>
+    <div class="sc-hagio">Mystic and reformer. Experienced the Transverberation &mdash; an angel pierced her heart with a golden spear of divine love. Her incorrupt heart, still bearing the wound, is displayed in a reliquary at &Aacute;vila. <strong>The smallest collection: 8 relics.</strong></div>
+  </div>
+
+  <div class="saint-card" style="border-left: 4px solid #6B6B6B;">
+    <div class="sc-head">
+      <div class="sc-name" style="color:#6B6B6B;">V. Bartholomew</div>
+      <div class="sc-key">11 Relics &mdash; Rome</div>
+    </div>
+    <div class="sc-vibe">Basilica di San Bartolomeo, Rome, 1st century</div>
+    <div class="sc-hagio">Apostle martyred in Armenia by being flayed alive &mdash; stripped entirely of his skin. Patron saint of tanners. Michelangelo painted him in the Sistine Chapel holding his own peeled skin.</div>
+  </div>
+
+  <div class="saint-card" style="border-left: 4px solid #E8E0D6;">
+    <div class="sc-head">
+      <div class="sc-name" style="color:#E8E0D6;">VI. Agatha</div>
+      <div class="sc-key">9 Relics &mdash; Catania</div>
+    </div>
+    <div class="sc-vibe">Cathedral of Sant&rsquo;Agata, Catania, 3rd century</div>
+    <div class="sc-hagio">Virgin martyr of Sicily. Her breasts were cut off during torture. Later, a volcanic eruption was halted when her veil was held before the lava. Patron saint of Catania and breast cancer patients.</div>
+  </div>
+
+  <div class="saint-card" style="border-left: 4px solid #F0C896;">
+    <div class="sc-head">
+      <div class="sc-name" style="color:#F0C896;">VII. Francis</div>
+      <div class="sc-key">13 Relics &mdash; Assisi</div>
+    </div>
+    <div class="sc-vibe">Basilica di San Francesco, Assisi, 13th century</div>
+    <div class="sc-hagio">Founded the Franciscan order. Received the stigmata &mdash; the five wounds of Christ &mdash; while praying on Mount La Verna. Patron saint of animals and ecology. <strong>The largest collection: 13 relics.</strong></div>
+  </div>
+
+  <div class="saint-card" style="border-left: 4px solid #D4A843;">
+    <div class="sc-head">
+      <div class="sc-name" style="color:#D4A843;">VIII. Catherine</div>
+      <div class="sc-key">10 Relics &mdash; Siena</div>
+    </div>
+    <div class="sc-vibe">Basilica di San Domenico, Siena, 14th century</div>
+    <div class="sc-hagio">Mystic, theologian, Doctor of the Church. Her preserved head is displayed in a gilded reliquary at Siena. She once drank pus from a leper&rsquo;s wound. Patron saint of Europe.</div>
+  </div>
+</div>
+
+<!-- =====================================================
+     05 AUCTION MECHANICS
+     ===================================================== -->
+<div class="content">
+  <div class="section" data-num="05" id="auction">
+    <span class="section-label">05 &mdash; Mechanics</span>
+    <h2>Auction System</h2>
+
+    <h3>Lot Creation</h3>
+    <p>A random saint is chosen, then a random uncollected relic from that saint. The lot enters the market with a starting bid between <strong>&diams; 15&ndash;150</strong> and a duration of <strong>45&ndash;150 seconds</strong>. Duplicate prevention: active lots cannot contain the same relic ID (up to 10 attempts before giving up).</p>
+
+    <h3>Player Bidding</h3>
+    <p>Validation requires: lot must exist and be <code>active</code>, amount must exceed <code>currentBid</code>, amount must not exceed <code>currency</code>. On success, the lot&rsquo;s weight increases by 0.3 (capped at 3.0), keeping bid-on lots prominent in the grid. <strong>Currency is not deducted until the lot is won.</strong></p>
+
+    <div class="callout gold">
+      <span class="callout-label">Design Decision</span>
+      <p>Deferred deduction creates a crucial tension: your &ldquo;available&rdquo; currency may be committed across several active bids. You might win them all &mdash; and go broke. The player must mentally track their exposure.</p>
+    </div>
+
+    <h3>Lot Resolution</h3>
+    <p>When <code>timeRemaining &le; 0</code>:</p>
+    <p><strong>Win:</strong> Player&rsquo;s bid &ge; current bid &rarr; <code>status = 'won'</code>, gold flash, relic added to saint&rsquo;s collection, currency deducted. If saint now complete &rarr; completion overlay for 2.5 seconds.</p>
+    <p><strong>Loss:</strong> Player bid but was outbid &rarr; <code>status = 'lost'</code>, red flash, fades out after 3 seconds.</p>
+    <p><strong>Closed:</strong> Player never bid &rarr; <code>status = 'closed'</code>, removed silently.</p>
+    <p>All resolved lots are garbage-collected after 2 seconds (<code>timeRemaining &lt; -2</code>).</p>
+  </div>
+</div>
+
+<!-- =====================================================
+     06 AI BIDDING (VERMILLION)
+     ===================================================== -->
+<div class="bleed verm" id="ai">
+  <span class="section-label">06 &mdash; Rivals</span>
+  <h2>AI Bidding</h2>
+  <p>AI bidders evaluate every <strong>3 seconds</strong>. For each active lot, a probability check determines whether an AI bid is placed. Aggression escalates with urgency:</p>
+  <table style="color:#fff;">
+    <thead><tr><th style="color:rgba(255,255,255,0.7);border-bottom-color:rgba(255,255,255,0.3);">Time Remaining</th><th style="color:rgba(255,255,255,0.7);border-bottom-color:rgba(255,255,255,0.3);">Bid Probability</th><th style="color:rgba(255,255,255,0.7);border-bottom-color:rgba(255,255,255,0.3);">Behaviour</th></tr></thead>
+    <tbody>
+      <tr><td style="border-bottom-color:rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);">&lt; 10 seconds</td><td style="border-bottom-color:rgba(255,255,255,0.1);color:#fff;font-weight:600;">20%</td><td style="border-bottom-color:rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);">Aggressive sniping</td></tr>
+      <tr><td style="border-bottom-color:rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);">&lt; 30 seconds</td><td style="border-bottom-color:rgba(255,255,255,0.1);color:#fff;font-weight:600;">8%</td><td style="border-bottom-color:rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);">Active bidding</td></tr>
+      <tr><td style="border-bottom-color:rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);">&ge; 30 seconds</td><td style="border-bottom-color:rgba(255,255,255,0.1);color:#fff;font-weight:600;">3%</td><td style="border-bottom-color:rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);">Occasional interest</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Bid increment:</strong> Random between <strong>3</strong> and <strong>max(8, currentBid &times; 8%)</strong>. Small increments that accumulate &mdash; AI bidders are patient, not explosive.</p>
+  <p><strong>Outbid signal:</strong> When AI outbids the player, the grid cell receives a red <code>'outbid'</code> flash lasting 1.5 seconds. The cell&rsquo;s border pulses red continuously until the player rebids or the lot expires.</p>
+  <p><strong>Critical:</strong> AI bidders are <strong>completely paused</strong> during heresy slowdown events. This is the core strategic mechanic.</p>
+</div>
+
+<!-- =====================================================
+     07 HERESY SYSTEM (INK)
+     ===================================================== -->
+<div class="bleed ink" id="heresy">
+  <span class="section-label">07 &mdash; Heresy</span>
+  <h2>The Heresy System</h2>
+  <p class="lead">The terminal feed displays a mix of system messages and heresy reports from five fictional heterodox sects. Heresy events create a strategic freeze window where the player can bid unopposed.</p>
+
+  <h3>The Five Sects</h3>
+  <p>
+    <span class="sect-badge" style="background:hsl(0,75%,55%);color:#fff;">Flagellants</span>
+    <span class="sect-badge" style="background:hsl(185,80%,55%);color:#000;">Cathari</span>
+    <span class="sect-badge" style="background:hsl(300,65%,60%);color:#fff;">Gnostic Order</span>
+    <span class="sect-badge" style="background:hsl(100,70%,50%);color:#000;">Bogomils</span>
+    <span class="sect-badge" style="background:hsl(30,90%,55%);color:#000;">Waldensians</span>
+  </p>
+
+  <h3>Message Generation</h3>
+  <p>Every <strong>2.5 seconds</strong>, a new message is generated: <strong>35% chance</strong> heresy report (random sect + random template), <strong>65% chance</strong> system message (benign status update). Messages are kept in a rolling buffer: max 80, trimmed to last 60 on overflow.</p>
+
+  <h3>Heresy Templates</h3>
+  <p>Tribunal alerts, intercepts, breach reports, sweeps, and edicts &mdash; all procedurally filled with a random sect name. System messages are terminal flavour text: &ldquo;Market tick synchronized&rdquo;, &ldquo;Canonical verification: PASS&rdquo;, etc.</p>
+
+  <h3>The Slowdown</h3>
+  <p>When a heresy report fires:</p>
+  <div class="callout" style="border-color:rgba(255,255,255,0.1);border-left-color:var(--gold);">
+    <span class="callout-label" style="color:var(--gold);">Tribunal Delay &mdash; 4 Seconds</span>
+    <p>The game tick alternates skipping (effectively half-speed timers). AI bidders are completely paused. The title bar shows <code>&block; TRIBUNAL DELAY &block;</code>. The terminal header shows <code>&block; HERESY DETECTED &mdash; MARKET DELAY &block;</code>.</p>
+  </div>
+  <p><strong>Strategic implication:</strong> The player can bid during this window without AI competition. Skilled players learn to watch for heresy reports and bid aggressively during tribunal delays.</p>
+</div>
+
+<!-- =====================================================
+     08 ECONOMY
+     ===================================================== -->
+<div class="content">
+  <div class="section" data-num="08" id="economy">
+    <span class="section-label">08 &mdash; Economy</span>
+    <h2>Currency &amp; Strategy</h2>
+
+    <div class="pullquote">&diams; 5,000 sounds like a lot but saints with 12+ relics drain it fast. Pick 1&ndash;2 saints and commit.</div>
+
+    <table>
+      <thead><tr><th>Constant</th><th>Value</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Starting Currency</strong></td><td>&diams; 5,000</td><td>Fixed budget, no refills</td></tr>
+        <tr><td><strong>Starting Bids</strong></td><td>&diams; 15&ndash;150</td><td>Random per lot</td></tr>
+        <tr><td><strong>AI Increment</strong></td><td>3&ndash;8% of current</td><td>Small, accumulating pressure</td></tr>
+        <tr><td><strong>Initial Lots</strong></td><td>18</td><td>Market starts populated</td></tr>
+        <tr><td><strong>Max Active Lots</strong></td><td>30</td><td>Grid capacity limit</td></tr>
+        <tr><td><strong>Lot Duration</strong></td><td>45&ndash;150 seconds</td><td>Random per lot</td></tr>
+        <tr><td><strong>Spawn Rate</strong></td><td>Every 5 seconds</td><td>Continuous lot creation</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Strategic Notes</h3>
+    <p><strong>1. Budget is everything.</strong> Saints with 12+ relics require 12+ winning bids. At average bid costs of &diams; 100&ndash;300, a single saint can cost &diams; 1,200&ndash;3,600.</p>
+    <p><strong>2. Exploit heresy freezes.</strong> When the tribunal delay hits, AI stops bidding for 4 seconds. Place bids during this window.</p>
+    <p><strong>3. Watch the ticker, not the grid.</strong> The LotTicker&rsquo;s &ldquo;YOUR BIDS&rdquo; section is the fastest way to find lots you&rsquo;re losing.</p>
+    <p><strong>4. Small saints are easier.</strong> Teresa (8 relics) and Agatha (9 relics) require fewer wins than Francis (13 relics).</p>
+    <p><strong>5. Don&rsquo;t overbid early.</strong> AI bid increments are small (3&ndash;8% of current bid). Match their pace, don&rsquo;t jump ahead.</p>
+    <p><strong>6. Closing lots get expensive.</strong> AI bid chance jumps to 20% in the final 10 seconds. Bid early or bid big.</p>
+  </div>
+
+  <div class="orn">&bull; &bull; &bull;</div>
+</div>
+
+<!-- =====================================================
+     09 LAYOUT (INK-GOLD)
+     ===================================================== -->
+<div class="bleed ink-gold" id="layout">
+  <span class="section-label">09 &mdash; Interface</span>
+  <h2>3-Column Command Center</h2>
+  <p class="lead">The layout is a dense, information-rich command center inspired by trading terminals. Every pixel serves the core loop: scan, select, bid, track.</p>
+
+  <h3>Structure</h3>
+  <table>
+    <thead><tr><th>Region</th><th>Width</th><th>Component</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Title Bar</strong></td><td>100%</td><td>Window chrome</td><td>HOLY_OPS.EXE branding + tribunal delay indicator</td></tr>
+      <tr><td><strong>Saint Tracker</strong></td><td>100%</td><td><code>SaintTracker</code></td><td>Currency display + saint completion progress bars</td></tr>
+      <tr><td><strong>Left Column</strong></td><td>220px</td><td><code>LotTicker</code></td><td>&ldquo;YOUR BIDS&rdquo; pinned section + all active lots list</td></tr>
+      <tr><td><strong>Centre</strong></td><td>flex</td><td>BSP Market Grid</td><td>Dynamic treemap of all active lots</td></tr>
+      <tr><td><strong>Right Column</strong></td><td>320px</td><td><code>BidPanel</code></td><td>Bid controls + lot detail</td></tr>
+      <tr><td><strong>Right (mid)</strong></td><td>320px</td><td><code>TerminalFeed</code></td><td>Scrolling heresy/system message log</td></tr>
+      <tr><td><strong>Right (bottom)</strong></td><td>320px</td><td><code>Collection</code></td><td>Won relics catalogue grouped by saint</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Wireframe</h3>
+</div>
+
+<div class="content">
+  <div class="wf-wrap">
+    <div class="wf-tag">Wireframe &mdash; 3-Column Layout</div>
+    <div class="wf-screens">
+      <div class="wf-col">
+        <div class="wf-label">Lot Ticker (220px)</div>
+        <div class="wf-panel" style="width:120px;height:300px;">
+          <div class="wf-b f" style="top:6px;left:6px;right:6px;height:14px;font-size:5px;">YOUR BIDS (2)</div>
+          <div class="wf-b r" style="top:24px;left:6px;right:6px;height:24px;font-size:5px;">LOT-042 &diams;340 WINNING</div>
+          <div class="wf-b" style="top:52px;left:6px;right:6px;height:24px;font-size:5px;border-color:#e73c0e;color:#e73c0e;">LOT-099 &diams;180 OUTBID</div>
+          <div class="wf-b f" style="top:84px;left:6px;right:6px;height:14px;font-size:5px;">ALL LOTS</div>
+          <div class="wf-b" style="top:102px;left:6px;right:6px;height:18px;font-size:5px;">LOT-001 &diams;45 1:23</div>
+          <div class="wf-b" style="top:122px;left:6px;right:6px;height:18px;font-size:5px;">LOT-002 &diams;88 0:47</div>
+          <div class="wf-b" style="top:142px;left:6px;right:6px;height:18px;font-size:5px;">LOT-003 &diams;120 2:05</div>
+          <div class="wf-b" style="top:162px;left:6px;right:6px;bottom:6px;font-size:5px;color:#ccc;">...</div>
+        </div>
+      </div>
+      <div class="wf-col">
+        <div class="wf-label">BSP Market Grid</div>
+        <div class="wf-panel" style="width:260px;height:300px;">
+          <div class="wf-b d" style="top:6px;left:6px;width:140px;height:120px;font-size:6px;">LOT-042<br><span style="color:var(--gold);">&diams; 340</span><br>0:23</div>
+          <div class="wf-b d" style="top:6px;left:150px;right:6px;height:56px;font-size:5px;">LOT-015<br>&diams; 67</div>
+          <div class="wf-b d" style="top:66px;left:150px;right:6px;height:60px;font-size:5px;">LOT-099<br><span style="color:#e73c0e;">&diams; 180</span></div>
+          <div class="wf-b d" style="top:130px;left:6px;width:80px;bottom:6px;font-size:5px;">LOT-007<br>&diams; 22</div>
+          <div class="wf-b d" style="top:130px;left:90px;right:6px;height:80px;font-size:5px;">LOT-033<br>&diams; 55</div>
+          <div class="wf-b d" style="bottom:6px;left:90px;right:6px;height:78px;font-size:5px;">LOT-051<br>&diams; 140</div>
+        </div>
+      </div>
+      <div class="wf-col">
+        <div class="wf-label">Right Panel (320px)</div>
+        <div class="wf-panel" style="width:140px;height:300px;">
+          <div class="wf-b f" style="top:6px;left:6px;right:6px;height:14px;font-size:5px;">BID PANEL</div>
+          <div class="wf-b" style="top:24px;left:6px;right:6px;height:60px;font-size:5px;">LOT-042<br>Third Metacarpal<br>AMBROSE [3/12]<br>&diams; 340 &mdash; 0:23</div>
+          <div class="wf-b g" style="top:88px;left:6px;right:6px;height:20px;font-size:5px;">[+10] [+50] [+100]</div>
+          <div class="wf-b f" style="top:116px;left:6px;right:6px;height:14px;font-size:5px;">TRIBUNAL FEED</div>
+          <div class="wf-b" style="top:134px;left:6px;right:6px;height:80px;font-size:4px;text-align:left;padding:4px;align-items:start;line-height:1.5;">[ALERT] FLAGELLANT intercept<br>[SYS] Market tick sync<br>[ALERT] CATHARI breach<br>[SYS] Canonical verify: PASS</div>
+          <div class="wf-b f" style="top:220px;left:6px;right:6px;height:14px;font-size:5px;">COLLECTION</div>
+          <div class="wf-b" style="top:238px;left:6px;right:6px;bottom:6px;font-size:5px;">AMBROSE 3/12<br>LUCIA 1/10</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================
+     10 BSP GRID
+     ===================================================== -->
+<div class="content">
+  <div class="section" data-num="10" id="grid">
+    <span class="section-label">10 &mdash; The Grid</span>
+    <h2>BSP Market Grid</h2>
+    <p class="lead">The market grid uses Binary Space Partitioning to dynamically size auction cells based on their weight. Higher-weight lots get more screen real estate.</p>
+
+    <h3>Algorithm</h3>
+    <p><strong>1.</strong> Sort lots by weight (descending). <strong>2.</strong> Choose split axis: horizontal if width &ge; height, vertical otherwise. <strong>3.</strong> Accumulate weights from the top until reaching 40% of total weight &rarr; split point. <strong>4.</strong> Split ratio clamped to 25%&ndash;75%. <strong>5.</strong> Recurse on both halves. <strong>6.</strong> Base case: single lot &rarr; return leaf node with 1px gap on all sides.</p>
+    <p>Minimum cell dimensions: <strong>120&times;90 pixels</strong>.</p>
+
+    <h3>Weight Dynamics</h3>
+    <p>Weights range from ~0.8 to 3.0. The formula:</p>
+    <pre><span class="f">weight</span> = <span class="n">0.8</span> + (<span class="n">1</span> - timeRatio) &times; <span class="n">0.8</span>
+       + min(bidCount &times; <span class="n">0.1</span>, <span class="n">0.8</span>)  <span class="c">// activity boost</span>
+       + (yourBid ? <span class="n">1.0</span> : <span class="n">0</span>)         <span class="c">// your lots stay large</span>
+       + (timeRemaining &lt; <span class="n">15</span> ? <span class="n">0.5</span> : <span class="n">0</span>) <span class="c">// urgency boost</span></pre>
+    <p>This means <strong>lots you&rsquo;ve bid on stay large and visible</strong>, and lots about to expire grow to signal urgency.</p>
+
+    <h3>Grid Cell Visual States</h3>
+    <table>
+      <thead><tr><th>State</th><th>Border</th><th>Animation</th></tr></thead>
+      <tbody>
+        <tr><td><strong>No bid</strong></td><td>Default cell border</td><td>None</td></tr>
+        <tr><td><strong>Winning</strong></td><td>3px green left border</td><td>None</td></tr>
+        <tr><td><strong>Outbid</strong></td><td>3px red left border</td><td><code>outbid-pulse</code> 1.2s infinite</td></tr>
+        <tr><td><strong>Selected</strong></td><td>2px gold border</td><td>None</td></tr>
+        <tr><td><strong>Outbid flash</strong></td><td>Red background</td><td><code>flash-red</code> 0.6s</td></tr>
+        <tr><td><strong>Win flash</strong></td><td>Gold background</td><td><code>flash-gold</code> 0.8s</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <span class="callout-label">Easter Egg</span>
+      <p>~5% of grid cells contain a hidden Age of Empires 2 wololo monk sprite (24&times;24, 60% opacity). Clicking it plays a distorted wololo sound via Web Audio API with bandpass filtering at 800Hz.</p>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================
+     11 COMPONENTS (VERMILLION)
+     ===================================================== -->
+<div class="bleed verm" id="components">
+  <span class="section-label">11 &mdash; Components</span>
+  <h2>UI Components</h2>
+
+  <h3>LotTicker (Left Sidebar)</h3>
+  <p>Two sections: <strong>YOUR BIDS</strong> (pinned at top) shows only lots where <code>yourBid !== null</code>, sorted by time remaining, with WIN/OUTBID status labels. <strong>ALL LOTS</strong> (scrollable below) shows every active lot. Clicking any row selects it.</p>
+
+  <h3>BidPanel (Right Sidebar)</h3>
+  <p>When a lot is selected: Lot ID, relic name, saint progress, current bid, timer, status indicator (WINNING / OUTBID). Quick bid buttons: <strong>+10, +50, +100</strong>. Manual bid input. Confirmation toast: &ldquo;BID PLACED &diams; {amount}&rdquo; for 2 seconds. ESC to close.</p>
+
+  <h3>TerminalFeed</h3>
+  <p>Scrolling heresy and system message log. Each message colour-coded by sect. Header shows <code>&block; HERESY DETECTED &mdash; MARKET DELAY &block;</code> during slowdowns.</p>
+
+  <h3>Collection</h3>
+  <p>Bottom of right sidebar (160px height). Won relics grouped by saint: saint name with progress fraction, 28&times;28 relic images with golden drop-shadow, hover tooltip showing relic name.</p>
+
+  <h3>SaintTracker (Top Bar)</h3>
+  <p>Currency display (&diams; with gold colouring) + horizontal row of saints with progress bars showing <code>collected/total</code> as filled segments.</p>
+
+  <h3>SaintCompleteOverlay</h3>
+  <p>Full-screen celebration when a saint is completed. Semi-transparent dark backdrop, saint name in large Pirata One text, <code>saint-reveal</code> animation (2s scale + fade), auto-dismisses after 2.5 seconds.</p>
+</div>
+
+<!-- =====================================================
+     12 TUTORIAL
+     ===================================================== -->
+<div class="content">
+  <div class="section" data-num="12" id="tutorial">
+    <span class="section-label">12 &mdash; Onboarding</span>
+    <h2>Tutorial System</h2>
+    <p>6-page interactive onboarding shown on first load. Page-dot navigation, back/next buttons, skip button on all pages.</p>
+
+    <table>
+      <thead><tr><th>Page</th><th>Title</th><th>Content</th></tr></thead>
+      <tbody>
+        <tr><td><strong>1</strong></td><td>HOLY_OPS.EXE</td><td>Welcome + goal explanation + budget warning</td></tr>
+        <tr><td><strong>2</strong></td><td>THE GRID</td><td>Annotated mock cell + status indicator legend</td></tr>
+        <tr><td><strong>3</strong></td><td>HOW TO BID</td><td>Step-by-step with visual mock of bid bar</td></tr>
+        <tr><td><strong>4</strong></td><td>RIVALS &amp; HERESY</td><td>AI bidder behaviour + heresy freeze mechanic + sect legend</td></tr>
+        <tr><td><strong>5</strong></td><td>COMPLETING SAINTS</td><td>Saint tracker explanation + completion overlay preview</td></tr>
+        <tr><td><strong>6</strong></td><td>QUICK REFERENCE</td><td>Keyboard/action reference table</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="orn">&bull; &bull; &bull;</div>
+</div>
+
+<!-- =====================================================
+     13 VISUAL DESIGN (INK)
+     ===================================================== -->
+<div class="bleed ink" id="visual">
+  <span class="section-label">13 &mdash; Visual</span>
+  <h2>Visual Design System</h2>
+  <p class="lead">Everything is sharp-cornered monospace text on a deep navy-black background. Border radius is 0px everywhere. The terminal aesthetic is total.</p>
+
+  <h3>Colour Palette</h3>
+  <table>
+    <thead><tr><th>Token</th><th>HSL</th><th>Usage</th></tr></thead>
+    <tbody>
+      <tr><td><strong><code>--background</code></strong></td><td>240 12% 4%</td><td>Deep navy-black app background</td></tr>
+      <tr><td><strong><code>--foreground</code></strong></td><td>240 2% 80%</td><td>Primary text</td></tr>
+      <tr><td><strong><code>--primary</code></strong></td><td>225 100% 58%</td><td>Blue &mdash; borders, active elements</td></tr>
+      <tr><td><strong><code>--accent</code></strong></td><td>45 100% 50%</td><td>Gold &mdash; currency, highlights, urgency</td></tr>
+      <tr><td><strong><code>--destructive</code></strong></td><td>0 72% 51%</td><td>Red &mdash; outbid, danger</td></tr>
+      <tr><td><strong><code>--success</code></strong></td><td>142 72% 45%</td><td>Green &mdash; winning, acquired</td></tr>
+      <tr><td><strong><code>--secondary</code></strong></td><td>240 6% 14%</td><td>Subtle hover/selection backgrounds</td></tr>
+      <tr><td><strong><code>--cell-bg</code></strong></td><td>240 10% 6%</td><td>Grid cell background</td></tr>
+      <tr><td><strong><code>--cell-titlebar</code></strong></td><td>240 8% 11%</td><td>Cell title bar background</td></tr>
+      <tr><td><strong><code>--cell-border</code></strong></td><td>225 100% 58%</td><td>Blue cell borders (matches primary)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Typography</h3>
+  <p>Monospace font stack: <code>'SF Mono', 'Cascadia Code', 'Consolas', 'Fira Code', monospace</code></p>
+  <p>Font sizes are deliberately small to maintain the terminal aesthetic: title bars at 9px, cell content at 9&ndash;13px, bid panel at 10&ndash;12px, currency display at 11px.</p>
+</div>
+
+<!-- =====================================================
+     14 ANIMATION
+     ===================================================== -->
+<div class="content">
+  <div class="section" data-num="14" id="animation">
+    <span class="section-label">14 &mdash; Motion</span>
+    <h2>Animation System</h2>
+    <p>All visual effects use CSS keyframes &mdash; no JS animation library. Four core animations:</p>
+    <table>
+      <thead><tr><th>Animation</th><th>Duration</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><strong><code>flash-red</code></strong></td><td>0.6s</td><td>Outbid notification on grid cell</td></tr>
+        <tr><td><strong><code>flash-gold</code></strong></td><td>0.8s</td><td>Win notification on grid cell</td></tr>
+        <tr><td><strong><code>saint-reveal</code></strong></td><td>2.0s</td><td>Saint completion overlay (scale + fade)</td></tr>
+        <tr><td><strong><code>outbid-pulse</code></strong></td><td>1.2s infinite</td><td>Pulsing red left border on outbid cells</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="orn">&bull; &bull; &bull;</div>
+</div>
+
+<!-- =====================================================
+     15 AUDIO
+     ===================================================== -->
+<div class="content">
+  <div class="section" data-num="15" id="audio">
+    <span class="section-label">15 &mdash; Audio</span>
+    <h2>Audio Design</h2>
+    <p>Currently a single audio effect: the wololo monk easter egg.</p>
+
+    <h3>Signal Chain</h3>
+    <div class="chain-row">
+      <div class="chain-n on">AudioBuffer (wololo.mp3)</div><div class="chain-a">&rarr;</div>
+      <div class="chain-n">WaveShaper (soft clip)</div><div class="chain-a">&rarr;</div>
+      <div class="chain-n">BandpassFilter (800Hz, Q=2)</div><div class="chain-a">&rarr;</div>
+      <div class="chain-n">Gain (0.08)</div><div class="chain-a">&rarr;</div>
+      <div class="chain-n on">Destination</div>
+    </div>
+    <p>Distortion curve: soft clipping via <code>&pi;+50 &times; x / (&pi; + 50|x|)</code>. Bandpass filter creates a lo-fi, muffled effect. Very quiet (gain 0.08) to avoid startling the player. Fails silently if audio context is unavailable.</p>
+  </div>
+
+  <div class="orn">&bull; &bull; &bull;</div>
+</div>
+
+<!-- =====================================================
+     16 ARCHITECTURE (INK)
+     ===================================================== -->
+<div class="bleed ink" id="stack">
+  <span class="section-label">16 &mdash; Architecture</span>
+  <h2>Tech Stack</h2>
+  <table>
+    <thead><tr><th>Layer</th><th>Technology</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Framework</strong></td><td>React 18</td><td>Component rendering, reconciliation</td></tr>
+      <tr><td><strong>Language</strong></td><td>TypeScript</td><td>Type safety across game logic + UI</td></tr>
+      <tr><td><strong>Build</strong></td><td>Vite 5</td><td>Development server + production bundling</td></tr>
+      <tr><td><strong>Styling</strong></td><td>Tailwind CSS 3</td><td>Utility-first styling + tailwindcss-animate</td></tr>
+      <tr><td><strong>UI Primitives</strong></td><td>shadcn/ui (Radix)</td><td>Accessible component library</td></tr>
+      <tr><td><strong>Routing</strong></td><td>React Router v6</td><td>Client-side navigation</td></tr>
+      <tr><td><strong>State</strong></td><td>React useState</td><td>Single source of truth, no external lib</td></tr>
+      <tr><td><strong>Audio</strong></td><td>Web Audio API</td><td>Wololo sound processing</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Key Decisions</h3>
+  <p><strong>No external state management.</strong> Game state is a single <code>useState&lt;GameState&gt;</code> in <code>Index.tsx</code>, updated via pure functions from <code>engine.ts</code>. This keeps the game loop simple and predictable.</p>
+  <p><strong>Memoised components.</strong> <code>GridCell</code>, <code>LotTicker</code>, <code>SaintTracker</code>, <code>TerminalFeed</code>, <code>Collection</code> are all wrapped in <code>React.memo</code> to prevent unnecessary re-renders during the 1-second tick cycle.</p>
+  <p><strong>Pure engine functions.</strong> All game logic (<code>tick</code>, <code>placeBid</code>, <code>aiBids</code>, <code>spawnLot</code>) are pure functions that take state and return new state &mdash; no side effects.</p>
+  <p><strong>CSS-only animations.</strong> All visual effects use CSS keyframes rather than JS animation libraries.</p>
+</div>
+
+<!-- =====================================================
+     17 ENGINE
+     ===================================================== -->
+<div class="content">
+  <div class="section" data-num="17" id="engine">
+    <span class="section-label">17 &mdash; Engine</span>
+    <h2>Game Engine</h2>
+
+    <h3>Intervals</h3>
+    <table>
+      <thead><tr><th>Interval</th><th>Rate</th><th>Handler</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Game tick</strong></td><td>1,000ms</td><td><code>tick()</code></td><td>Slowed to half during heresy</td></tr>
+        <tr><td><strong>Lot spawn</strong></td><td>5,000ms</td><td><code>spawnLot()</code></td><td>Paused at 30 active lots</td></tr>
+        <tr><td><strong>AI bids</strong></td><td>3,000ms</td><td><code>aiBids()</code></td><td>Paused during heresy</td></tr>
+        <tr><td><strong>Feed messages</strong></td><td>2,500ms</td><td>Generate msg</td><td>35% heresy chance</td></tr>
+      </tbody>
+    </table>
+
+    <h3>State Flow</h3>
+    <pre><span class="c">// Player bid flow</span>
+User clicks GridCell/LotTicker &rarr; handleSelect(lotId)
+  &rarr; BidPanel renders with lot details
+  &rarr; User clicks +10/+50/+100 &rarr; handleBid(lotId, amount)
+    &rarr; placeBid(state, lotId, amount) &rarr; GameState updates
+      &rarr; GridCell re-renders (new bid status)
+      &rarr; LotTicker &ldquo;YOUR BIDS&rdquo; updates
+      &rarr; BidPanel shows &ldquo;BID PLACED&rdquo; confirmation
+
+<span class="c">// AI outbid flow</span>
+aiBids() &rarr; flash=&lsquo;outbid&rsquo; &rarr; GridCell pulses red
+  &rarr; LotTicker shows &ldquo;OUTBID&rdquo; label
+  &rarr; BidPanel shows &ldquo;OUTBID&rdquo; status
+
+<span class="c">// Win resolution</span>
+Lot expires with winning bid &rarr; tick()
+  &rarr; status=&lsquo;won&rsquo;, relic added, currency deducted
+  &rarr; Collection updates
+  &rarr; If saint complete &rarr; SaintCompleteOverlay (2.5s)</pre>
+
+    <h3>File Structure</h3>
+    <pre><span class="c">src/</span>
+<span class="c">&boxvr;&boxh;&boxh;</span> game/
+<span class="c">&boxv;   &boxvr;&boxh;&boxh;</span> <span class="f">types.ts</span>          <span class="c"># All TypeScript interfaces</span>
+<span class="c">&boxv;   &boxvr;&boxh;&boxh;</span> <span class="f">engine.ts</span>         <span class="c"># Core logic (tick, bid, spawn, AI)</span>
+<span class="c">&boxv;   &boxvr;&boxh;&boxh;</span> <span class="f">data.ts</span>           <span class="c"># Saints &amp; relics data</span>
+<span class="c">&boxv;   &boxvr;&boxh;&boxh;</span> <span class="f">heresy.ts</span>         <span class="c"># Heresy event system</span>
+<span class="c">&boxv;   &boxvr;&boxh;&boxh;</span> <span class="f">bsp.ts</span>            <span class="c"># Binary Space Partitioning</span>
+<span class="c">&boxv;   &boxvr;&boxh;&boxh;</span> <span class="f">audio.ts</span>          <span class="c"># Web Audio wololo</span>
+<span class="c">&boxv;   &boxur;&boxh;&boxh;</span> <span class="f">relicImages.ts</span>    <span class="c"># Relic-to-image hash mapping</span>
+<span class="c">&boxvr;&boxh;&boxh;</span> components/
+<span class="c">&boxv;   &boxvr;&boxh;&boxh;</span> <span class="f">GridCell.tsx</span>      <span class="c"># BSP grid auction cell</span>
+<span class="c">&boxv;   &boxvr;&boxh;&boxh;</span> <span class="f">LotTicker.tsx</span>    <span class="c"># Left sidebar lot list</span>
+<span class="c">&boxv;   &boxvr;&boxh;&boxh;</span> <span class="f">BidPanel.tsx</span>     <span class="c"># Right sidebar bid controls</span>
+<span class="c">&boxv;   &boxvr;&boxh;&boxh;</span> <span class="f">TerminalFeed.tsx</span>  <span class="c"># Heresy/system message log</span>
+<span class="c">&boxv;   &boxvr;&boxh;&boxh;</span> <span class="f">Collection.tsx</span>   <span class="c"># Won relics catalogue</span>
+<span class="c">&boxv;   &boxvr;&boxh;&boxh;</span> <span class="f">SaintTracker.tsx</span> <span class="c"># Top bar saint progress</span>
+<span class="c">&boxv;   &boxur;&boxh;&boxh;</span> <span class="f">TutorialOverlay.tsx</span> <span class="c"># 6-page onboarding</span>
+<span class="c">&boxur;&boxh;&boxh;</span> pages/
+    <span class="c">&boxur;&boxh;&boxh;</span> <span class="f">Index.tsx</span>        <span class="c"># Main game + loop orchestration</span></pre>
+  </div>
+
+  <div class="orn">&bull; &bull; &bull;</div>
+</div>
+
+<!-- =====================================================
+     18 PERFORMANCE
+     ===================================================== -->
+<div class="content">
+  <div class="section" data-num="18" id="performance">
+    <span class="section-label">18 &mdash; Performance</span>
+    <h2>Performance Notes</h2>
+    <p>With 30 lots rendering at a 1-second tick rate, performance is managed through:</p>
+    <p><strong>React.memo on all child components.</strong> GridCell, LotTicker, SaintTracker, TerminalFeed, and Collection only re-render when their props actually change.</p>
+    <p><strong>Stable references.</strong> <code>useCallback</code> for all event handlers. <code>useMemo</code>-style patterns for derived data (lot maps, saint maps).</p>
+    <p><strong>BSP recalculation.</strong> Runs every tick but only on the active lot subset. The algorithm is O(n log n) and handles 30 items in &lt;1ms.</p>
+    <p><strong>Garbage collection.</strong> Resolved lots are cleaned up after 2 seconds to prevent memory growth.</p>
+    <p><strong>Relic images.</strong> 31 golden reliquary images assigned via consistent hashing (<code>hashCode(relicId) % RELIC_IMAGES.length</code>) &mdash; same relic always gets the same image across sessions.</p>
+  </div>
+</div>
+
+<!-- =====================================================
+     FOOTER
+     ===================================================== -->
+<div class="footer">
+  &bull; &bull; &bull;<br><br>
+  Holy Ops &mdash; Relic Exchange Terminal<br>
+  GDD v0.1 &mdash; March 2026<br><br>
+  &cross; &ensp; Finis &ensp; &cross;
+</div>
+
+</main>
+
+</body>
+</html>
