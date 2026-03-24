@@ -6,7 +6,7 @@ export function playWololo() {
       audioCtx = new AudioContext();
     }
 
-    fetch('/images/relics/wololo.mp3')
+    fetch(`${import.meta.env.BASE_URL}images/relics/wololo.mp3`)
       .then(res => res.arrayBuffer())
       .then(buf => audioCtx!.decodeAudioData(buf))
       .then(decoded => {

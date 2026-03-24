@@ -142,7 +142,7 @@ const GridCell = memo(({ node, lot, saintProgress, isSelected, onSelect }: GridC
         {/* Rare wololo monk */}
         {hasWololo && node.w > 100 && node.h > 80 && (
           <img
-            src="/images/relics/aoe-wolo.gif"
+            src={`${import.meta.env.BASE_URL}images/relics/aoe-wolo.gif`}
             alt=""
             className="absolute z-20 cursor-pointer"
             style={{
